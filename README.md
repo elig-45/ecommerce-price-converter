@@ -97,4 +97,4 @@ manifest.json
 - No multi-currency UI (EUR default).
 
 ## License
-See `LICENSE`.
+See [LICENSE](LICENSE).
