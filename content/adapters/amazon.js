@@ -3,18 +3,9 @@
   const EPC = (root.EPC = root.EPC || {});
   EPC.siteAdapters = EPC.siteAdapters || {};
 
-  const STRUCTURED_SELECTOR = "span.a-price";
-  const STRUCTURED_PART_SELECTOR = [
-    "span.a-price",
-    "span.a-price-whole",
-    "span.a-price-fraction",
-    "span.a-price-symbol",
-    "span.a-offscreen"
-  ].join(",");
-  const ATTR_AMAZON_ORIGINAL = "data-epc-amazon-original";
-  const ATTR_AMAZON_CONVERTED = "data-epc-amazon-converted";
-  const ATTR_AMAZON_DELIVERY_ORIGINAL = "data-epc-amazon-delivery-original";
+  const PRICE_SELECTOR = "span.a-price";
   const DELIVERY_SELECTOR = "[data-csa-c-delivery-price]";
+
   const REVIEW_SELECTOR = [
     "[data-cy=\"reviews-block\"]",
     ".a-icon-star",
@@ -25,23 +16,11 @@
     ".a-star-medium",
     ".mvt-review-star",
     ".mvt-review-star-mini",
-    "[aria-label*=\"out of 5 stars\"]",
-    "[aria-label*=\"ratings\"]"
+    "[aria-label*='out of 5 stars']",
+    "[aria-label*='ratings']"
   ].join(",");
 
-  const IGNORE_TAGS = new Set([
-    "SCRIPT",
-    "STYLE",
-    "NOSCRIPT",
-    "TEXTAREA",
-    "INPUT",
-    "SELECT",
-    "OPTION",
-    "CODE",
-    "PRE"
-  ]);
-
-  const EXCLUDED_SIMPLE_SELECTOR = [
+  const EXCLUDED_SELECTOR = [
     "#selectQuantity",
     "#quantity",
     ".a-dropdown-container",
@@ -50,6 +29,11 @@
     ".a-button-dropdown"
   ].join(",");
 
+  const ATTR_AMAZON_ORIGINAL = "data-epc-amazon-original";
+  const ATTR_AMAZON_CONVERTED = "data-epc-amazon-converted";
+  const ATTR_AMAZON_TARGET = "data-epc-amazon-target";
+  const ATTR_AMAZON_DELIVERY_ORIGINAL = "data-epc-amazon-delivery-original";
+
   let observer = null;
   let currentContext = null;
   let currentStats = null;
@@ -57,6 +41,9 @@
   let rateCache = {};
   let targetCurrency = null;
   let sourceOverride = null;
+  let siteCurrency = null;
+  let processing = false;
+  let pendingRoots = [];
 
   function createStats(hostname) {
     return {
@@ -75,17 +62,18 @@
     stats.reasonCounts[reason] = (stats.reasonCounts[reason] || 0) + 1;
   }
 
-  function ensureSourceCurrency(stats, fromCurrency) {
-    if (!fromCurrency) {
+  function updateStats() {
+    if (!currentStats) {
       return;
     }
-    if (!stats.sourceCurrency) {
-      stats.sourceCurrency = fromCurrency;
-      return;
+    currentStats.timestamp = Date.now();
+    if (currentContext?.updateStats) {
+      currentContext.updateStats(currentStats);
     }
-    if (stats.sourceCurrency !== fromCurrency) {
-      stats.sourceCurrency = "MIXED";
-    }
+  }
+
+  function normalizeText(text) {
+    return (text || "").replace(/[\u00A0\u202F]/g, " ").trim();
   }
 
   function stripCurrencyMarkers(text) {
@@ -96,8 +84,7 @@
     if (!text || typeof text !== "string") {
       return false;
     }
-    const normalized = text.replace(/[\u00A0\u202F]/g, " ");
-    const trimmed = normalized.trim();
+    const trimmed = normalizeText(text);
     if (trimmed.length === 0 || trimmed.length > 40) {
       return false;
     }
@@ -114,188 +101,39 @@
     return true;
   }
 
-  function hasExplicitCurrency(text) {
-    return Boolean(EPC.detectCurrency && EPC.detectCurrency(text));
-  }
-
-  function isExplicitPriceText(text) {
-    return isPriceLikeText(text) && hasExplicitCurrency(text);
-  }
-
-  function collectStructuredTargets(rootNode) {
+  function collectTargets(rootNode, selector) {
     if (!rootNode) {
       return [];
     }
-    if (
-      rootNode.nodeType === Node.DOCUMENT_NODE ||
-      rootNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE
-    ) {
-      const matches = new Set();
-      const seed = Array.from(rootNode.querySelectorAll(STRUCTURED_PART_SELECTOR));
-      for (const node of seed) {
-        if (node.closest(REVIEW_SELECTOR)) {
-          continue;
-        }
-        const priceEl = node.closest(STRUCTURED_SELECTOR);
-        if (priceEl && !priceEl.closest(REVIEW_SELECTOR)) {
-          matches.add(priceEl);
-        }
-      }
-      return Array.from(matches);
+    if (rootNode.nodeType === Node.DOCUMENT_NODE || rootNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+      return Array.from(rootNode.querySelectorAll(selector));
     }
     if (rootNode.nodeType !== Node.ELEMENT_NODE) {
       return [];
     }
     const element = rootNode;
-    const matches = new Set();
-    const seed = [];
-    if (element.matches(STRUCTURED_PART_SELECTOR)) {
-      seed.push(element);
+    const matches = [];
+    if (element.matches(selector)) {
+      matches.push(element);
     }
-    seed.push(...element.querySelectorAll(STRUCTURED_PART_SELECTOR));
-    for (const node of seed) {
-      if (node.closest(REVIEW_SELECTOR)) {
-        continue;
-      }
-      const priceEl = node.closest(STRUCTURED_SELECTOR);
-      if (priceEl && !priceEl.closest(REVIEW_SELECTOR)) {
-        matches.add(priceEl);
-      }
-    }
-    return Array.from(matches);
+    matches.push(...element.querySelectorAll(selector));
+    return matches;
   }
 
-  function collectSimpleTargets(rootNode) {
-    const candidates = new Set();
-    if (!rootNode) {
-      return [];
+  function shouldSkipElement(el) {
+    if (!el) {
+      return true;
     }
-    const rootElement =
-      rootNode.nodeType === Node.DOCUMENT_NODE
-        ? rootNode.body
-        : rootNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE
-        ? rootNode
-        : rootNode;
-    if (!rootElement) {
-      return [];
+    if (el.closest(REVIEW_SELECTOR)) {
+      return true;
     }
-    const walker = document.createTreeWalker(rootElement, NodeFilter.SHOW_TEXT, null, false);
-    let node = walker.nextNode();
-    let scanned = 0;
-    while (node && scanned < 1500) {
-      const parent = node.parentElement;
-      if (
-        parent &&
-        !IGNORE_TAGS.has(parent.tagName) &&
-        !parent.matches(STRUCTURED_PART_SELECTOR) &&
-        !parent.closest(STRUCTURED_SELECTOR) &&
-        !parent.closest(STRUCTURED_PART_SELECTOR) &&
-        !parent.closest(REVIEW_SELECTOR) &&
-        !parent.closest(EXCLUDED_SIMPLE_SELECTOR)
-      ) {
-        const text = (node.nodeValue || "").replace(/[\u00A0\u202F]/g, " ").trim();
-        if (isExplicitPriceText(text)) {
-          candidates.add(parent);
-        }
-      }
-      scanned += 1;
-      node = walker.nextNode();
+    if (el.closest(EXCLUDED_SELECTOR)) {
+      return true;
     }
-    return Array.from(candidates);
+    return false;
   }
 
-  function restoreGenericArtifacts(rootNode) {
-    if (!rootNode || !EPC.restoreElement) {
-      return;
-    }
-    const scope =
-      rootNode.nodeType === Node.DOCUMENT_NODE ||
-      rootNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE
-        ? rootNode
-        : rootNode;
-    if (!scope.querySelectorAll) {
-      return;
-    }
-    const targets = scope.querySelectorAll(
-      [
-        ".a-price [data-epc-converted]",
-        "#selectQuantity [data-epc-converted]",
-        "#quantity [data-epc-converted]",
-        ".a-dropdown-prompt[data-epc-converted]"
-      ].join(",")
-    );
-    for (const node of targets) {
-      EPC.restoreElement(node);
-    }
-  }
-
-  function updateStats() {
-    if (!currentStats) {
-      return;
-    }
-    currentStats.timestamp = Date.now();
-    if (currentContext?.updateStats) {
-      currentContext.updateStats(currentStats);
-    }
-  }
-
-  async function getRateCached(from, to) {
-    const key = `${from}->${to}`;
-    if (rateCache[key]) {
-      return rateCache[key];
-    }
-    const promise = currentContext
-      .getRate(from, to)
-      .then((res) => res?.rate || null)
-      .catch(() => null);
-    rateCache[key] = promise;
-    return promise;
-  }
-
-  function getPriceText(priceEl) {
-    if (!priceEl) {
-      return "";
-    }
-    const offscreen = priceEl.querySelector(".a-offscreen");
-    if (offscreen) {
-      const original = offscreen.getAttribute("data-epc-original");
-      if (original) {
-        return original.trim();
-      }
-      if (offscreen.textContent) {
-        return offscreen.textContent.trim();
-      }
-    }
-    const ariaHidden = priceEl.querySelector('span[aria-hidden="true"]');
-    if (ariaHidden && ariaHidden.textContent) {
-      return ariaHidden.textContent.trim();
-    }
-    const symbol = priceEl.querySelector(".a-price-symbol")?.textContent || "";
-    const whole = priceEl.querySelector(".a-price-whole")?.textContent || "";
-    const fraction = priceEl.querySelector(".a-price-fraction")?.textContent || "";
-    const combined = `${symbol}${whole}${fraction}`.replace(/\s+/g, " ").trim();
-    if (combined) {
-      return combined;
-    }
-    return (priceEl.textContent || "").trim();
-  }
-
-  function detectCurrencyForElement(el, text) {
-    if (EPC.detectCurrency) {
-      const direct = EPC.detectCurrency(text || "");
-      const symbol = el?.querySelector(".a-price-symbol")?.textContent || "";
-      const symbolDetected = EPC.detectCurrency(symbol);
-      if (symbolDetected?.currency) {
-        return symbolDetected;
-      }
-      if (direct?.currency) {
-        return direct;
-      }
-    }
-    return null;
-  }
-
-  function getFirstTextNode(el) {
+  function getPrimaryTextNode(el) {
     if (!el) {
       return null;
     }
@@ -337,7 +175,7 @@
     };
   }
 
-  function snapshotStructured(priceEl) {
+  function snapshotPrice(priceEl, mode) {
     if (!priceEl || priceEl.hasAttribute(ATTR_AMAZON_ORIGINAL)) {
       return;
     }
@@ -346,31 +184,193 @@
     const whole = priceEl.querySelector(".a-price-whole");
     const decimal = priceEl.querySelector(".a-price-decimal");
     const fraction = priceEl.querySelector(".a-price-fraction");
-    const wholeTextNode = getFirstTextNode(whole);
+    const ariaHidden = priceEl.querySelector('span[aria-hidden="true"]');
+    const wholeTextNode = getPrimaryTextNode(whole);
 
     const snapshot = {
-      mode: "structured",
+      mode,
       offscreen: offscreen ? offscreen.textContent : null,
       symbol: symbol ? symbol.textContent : null,
       wholeText: wholeTextNode ? wholeTextNode.nodeValue : null,
       hadWholeTextNode: Boolean(wholeTextNode),
       decimal: decimal ? decimal.textContent : null,
-      fraction: fraction ? fraction.textContent : null
+      fraction: fraction ? fraction.textContent : null,
+      ariaHidden: ariaHidden ? ariaHidden.textContent : null,
+      text: priceEl.textContent || null
     };
 
     priceEl.setAttribute(ATTR_AMAZON_ORIGINAL, JSON.stringify(snapshot));
   }
 
-  function snapshotSimple(priceEl, mode, value, offscreenValue) {
-    if (!priceEl || priceEl.hasAttribute(ATTR_AMAZON_ORIGINAL)) {
+  function restorePrice(priceEl) {
+    if (!priceEl) {
       return;
     }
-    const snapshot = {
-      mode,
-      value,
-      offscreen: offscreenValue || null
-    };
-    priceEl.setAttribute(ATTR_AMAZON_ORIGINAL, JSON.stringify(snapshot));
+    const raw = priceEl.getAttribute(ATTR_AMAZON_ORIGINAL);
+    if (!raw) {
+      return;
+    }
+    let snapshot = null;
+    try {
+      snapshot = JSON.parse(raw);
+    } catch (err) {
+      snapshot = null;
+    }
+    if (!snapshot) {
+      priceEl.removeAttribute(ATTR_AMAZON_ORIGINAL);
+      priceEl.removeAttribute(ATTR_AMAZON_CONVERTED);
+      return;
+    }
+
+    const offscreen = priceEl.querySelector(".a-offscreen");
+    const symbol = priceEl.querySelector(".a-price-symbol");
+    const whole = priceEl.querySelector(".a-price-whole");
+    const decimal = priceEl.querySelector(".a-price-decimal");
+    const fraction = priceEl.querySelector(".a-price-fraction");
+    const ariaHidden = priceEl.querySelector('span[aria-hidden="true"]');
+
+    if (snapshot.offscreen != null && offscreen) {
+      offscreen.textContent = snapshot.offscreen;
+    }
+
+    if (snapshot.mode === "structured") {
+      if (symbol && snapshot.symbol != null) {
+        symbol.textContent = snapshot.symbol;
+      }
+      if (whole) {
+        const textNode = getPrimaryTextNode(whole);
+        if (snapshot.hadWholeTextNode) {
+          if (textNode) {
+            textNode.nodeValue = snapshot.wholeText || "";
+          } else if (snapshot.wholeText != null) {
+            whole.insertBefore(document.createTextNode(snapshot.wholeText), decimal || null);
+          }
+        } else if (textNode) {
+          whole.removeChild(textNode);
+        }
+      }
+      if (decimal && snapshot.decimal != null) {
+        decimal.textContent = snapshot.decimal;
+      }
+      if (fraction && snapshot.fraction != null) {
+        fraction.textContent = snapshot.fraction;
+      }
+    } else if (snapshot.mode === "aria" && ariaHidden) {
+      ariaHidden.textContent = snapshot.ariaHidden || "";
+    } else if (snapshot.mode === "text") {
+      priceEl.textContent = snapshot.text || "";
+    }
+
+    priceEl.removeAttribute(ATTR_AMAZON_ORIGINAL);
+    priceEl.removeAttribute(ATTR_AMAZON_CONVERTED);
+    priceEl.removeAttribute(ATTR_AMAZON_TARGET);
+  }
+
+  function getPriceText(priceEl) {
+    if (!priceEl) {
+      return "";
+    }
+    const offscreen = priceEl.querySelector(".a-offscreen");
+    if (offscreen && offscreen.textContent) {
+      return offscreen.textContent.trim();
+    }
+    const ariaHidden = priceEl.querySelector('span[aria-hidden="true"]');
+    if (ariaHidden && ariaHidden.textContent) {
+      return ariaHidden.textContent.trim();
+    }
+    const symbol = priceEl.querySelector(".a-price-symbol")?.textContent || "";
+    const whole = priceEl.querySelector(".a-price-whole")?.textContent || "";
+    const fraction = priceEl.querySelector(".a-price-fraction")?.textContent || "";
+    const combined = `${symbol}${whole}${fraction}`.replace(/\s+/g, " ").trim();
+    if (combined) {
+      return combined;
+    }
+    return (priceEl.textContent || "").trim();
+  }
+
+  function detectCurrencyFromPrice(priceEl, text) {
+    if (!EPC.detectCurrency) {
+      return null;
+    }
+    const symbol = priceEl?.querySelector(".a-price-symbol")?.textContent || "";
+    const symbolDetected = EPC.detectCurrency(symbol);
+    if (symbolDetected?.currency) {
+      return symbolDetected;
+    }
+    const direct = EPC.detectCurrency(text || "");
+    if (direct?.currency) {
+      return direct;
+    }
+    return null;
+  }
+
+  function applyPrice(priceEl, value, formatter) {
+    if (!priceEl || !formatter) {
+      return false;
+    }
+    const resolvedCurrency = formatter.resolvedOptions?.().currency || targetCurrency;
+    const storedTarget = priceEl.getAttribute(ATTR_AMAZON_TARGET);
+    const hasChildConversions = Boolean(priceEl.querySelector("[data-epc-converted]"));
+    const isConverted = priceEl.getAttribute(ATTR_AMAZON_CONVERTED) === "1";
+    const shouldReapply = isConverted && (hasChildConversions || (storedTarget && storedTarget !== resolvedCurrency));
+    if (isConverted && !shouldReapply) {
+      return false;
+    }
+
+    const offscreen = priceEl.querySelector(".a-offscreen");
+    const symbol = priceEl.querySelector(".a-price-symbol");
+    const whole = priceEl.querySelector(".a-price-whole");
+    const decimal = priceEl.querySelector(".a-price-decimal");
+    const fraction = priceEl.querySelector(".a-price-fraction");
+    const ariaHidden = priceEl.querySelector('span[aria-hidden="true"]');
+
+    const parts = formatValueParts(value, formatter);
+    const hasStructured = Boolean(whole && fraction);
+    const mode = hasStructured ? "structured" : ariaHidden ? "aria" : "text";
+
+    snapshotPrice(priceEl, mode);
+
+    if (offscreen) {
+      offscreen.textContent = parts.formatted;
+    }
+
+    if (hasStructured) {
+      if (symbol && parts.currency) {
+        symbol.textContent = parts.currency;
+      }
+      const textNode = getPrimaryTextNode(whole);
+      if (textNode) {
+        textNode.nodeValue = parts.integer;
+      } else if (whole) {
+        whole.textContent = parts.integer;
+      }
+      if (decimal) {
+        decimal.textContent = parts.fraction ? parts.decimal || "." : "";
+      }
+      if (fraction) {
+        fraction.textContent = parts.fraction || "";
+      }
+    } else if (ariaHidden) {
+      ariaHidden.textContent = parts.formatted;
+    } else {
+      priceEl.textContent = parts.formatted;
+    }
+
+    priceEl.setAttribute(ATTR_AMAZON_CONVERTED, "1");
+    if (resolvedCurrency) {
+      priceEl.setAttribute(ATTR_AMAZON_TARGET, resolvedCurrency);
+    }
+    return true;
+  }
+
+  function restoreGenericArtifactsInPrice(priceEl) {
+    if (!priceEl || !EPC.restoreElement) {
+      return;
+    }
+    const converted = priceEl.querySelectorAll("[data-epc-converted]");
+    for (const node of converted) {
+      EPC.restoreElement(node);
+    }
   }
 
   function getFirstTextNodeWithCurrency(el) {
@@ -381,8 +381,8 @@
     let node = walker.nextNode();
     let scanned = 0;
     while (node && scanned < 50) {
-      const text = (node.nodeValue || "").trim();
-      if (text && hasExplicitCurrency(text)) {
+      const text = normalizeText(node.nodeValue || "");
+      if (text && EPC.detectCurrency && EPC.detectCurrency(text)) {
         return node;
       }
       scanned += 1;
@@ -398,12 +398,16 @@
     if (el.getAttribute(ATTR_AMAZON_CONVERTED) === "1") {
       return false;
     }
-    const deliveryPrice = el.getAttribute("data-csa-c-delivery-price") || "";
-    const detected = EPC.detectCurrency ? EPC.detectCurrency(deliveryPrice) : null;
+    const raw = el.getAttribute("data-csa-c-delivery-price") || "";
+    const trimmed = normalizeText(raw);
+    if (!trimmed) {
+      return false;
+    }
+    const detected = EPC.detectCurrency ? EPC.detectCurrency(trimmed) : null;
     if (!detected?.currency) {
       return false;
     }
-    const parsed = EPC.parsePrice ? EPC.parsePrice(deliveryPrice) : null;
+    const parsed = EPC.parsePrice ? EPC.parsePrice(trimmed) : null;
     if (parsed == null) {
       return false;
     }
@@ -414,14 +418,12 @@
     }
 
     if (!el.hasAttribute(ATTR_AMAZON_DELIVERY_ORIGINAL)) {
-      el.setAttribute(
-        ATTR_AMAZON_DELIVERY_ORIGINAL,
-        JSON.stringify({ value: textNode.nodeValue })
-      );
+      el.setAttribute(ATTR_AMAZON_DELIVERY_ORIGINAL, JSON.stringify({ value: textNode.nodeValue }));
     }
 
     const formatted = formatter.format(parsed * rate);
-    textNode.nodeValue = textNode.nodeValue.replace(deliveryPrice, formatted);
+    const nodeText = textNode.nodeValue || "";
+    textNode.nodeValue = nodeText.replace(raw, formatted).replace(trimmed, formatted);
     el.setAttribute(ATTR_AMAZON_CONVERTED, "1");
     return true;
   }
@@ -452,166 +454,30 @@
     el.removeAttribute(ATTR_AMAZON_CONVERTED);
   }
 
-  function applyStructured(priceEl, value, formatter) {
-    if (!priceEl || !formatter) {
-      return false;
-    }
-    if (priceEl.getAttribute(ATTR_AMAZON_CONVERTED) === "1") {
-      return false;
-    }
-
-    const offscreen = priceEl.querySelector(".a-offscreen");
-    const symbol = priceEl.querySelector(".a-price-symbol");
-    const whole = priceEl.querySelector(".a-price-whole");
-    const decimal = priceEl.querySelector(".a-price-decimal");
-    const fraction = priceEl.querySelector(".a-price-fraction");
-    const ariaHidden = priceEl.querySelector('span[aria-hidden="true"]');
-
-    const parts = formatValueParts(value, formatter);
-    const hasStructuredParts = Boolean(whole && fraction);
-    const originalOffscreen = offscreen ? offscreen.textContent : null;
-
-    if (hasStructuredParts) {
-      snapshotStructured(priceEl);
-    } else if (ariaHidden) {
-      snapshotSimple(priceEl, "aria", ariaHidden.textContent || "", originalOffscreen);
-    } else {
-      snapshotSimple(priceEl, "text", priceEl.textContent || "", originalOffscreen);
-    }
-
-    if (offscreen) {
-      offscreen.textContent = parts.formatted;
-    }
-
-    if (hasStructuredParts) {
-      if (symbol && parts.currency) {
-        symbol.textContent = parts.currency;
+  function getCurrencyFromInputs() {
+    const inputs = Array.from(
+      document.querySelectorAll(
+        "input[name$='[customerVisiblePrice][currencyCode]'], input[id$='[customerVisiblePrice][currencyCode]']"
+      )
+    );
+    for (const input of inputs) {
+      const value = (input.value || "").trim();
+      if (value) {
+        return value.toUpperCase();
       }
-      const textNode = getFirstTextNode(whole);
-      if (textNode) {
-        textNode.nodeValue = parts.integer;
-      } else if (decimal) {
-        whole.insertBefore(document.createTextNode(parts.integer), decimal);
-      } else {
-        whole.textContent = parts.integer;
-      }
-      if (decimal) {
-        decimal.textContent = parts.fraction ? parts.decimal || "." : "";
-      }
-      fraction.textContent = parts.fraction || "";
-    } else if (ariaHidden) {
-      ariaHidden.textContent = parts.formatted;
-    } else {
-      priceEl.textContent = parts.formatted;
-    }
-
-    priceEl.setAttribute(ATTR_AMAZON_CONVERTED, "1");
-    return true;
-  }
-
-  function restoreStructured(priceEl) {
-    if (!priceEl) {
-      return;
-    }
-    const raw = priceEl.getAttribute(ATTR_AMAZON_ORIGINAL);
-    if (!raw) {
-      return;
-    }
-    let snapshot = null;
-    try {
-      snapshot = JSON.parse(raw);
-    } catch (err) {
-      snapshot = null;
-    }
-    if (!snapshot) {
-      priceEl.removeAttribute(ATTR_AMAZON_ORIGINAL);
-      priceEl.removeAttribute(ATTR_AMAZON_CONVERTED);
-      return;
-    }
-
-    const offscreen = priceEl.querySelector(".a-offscreen");
-    const symbol = priceEl.querySelector(".a-price-symbol");
-    const whole = priceEl.querySelector(".a-price-whole");
-    const decimal = priceEl.querySelector(".a-price-decimal");
-    const fraction = priceEl.querySelector(".a-price-fraction");
-    const ariaHidden = priceEl.querySelector('span[aria-hidden="true"]');
-
-    if (snapshot.offscreen != null && offscreen) {
-      offscreen.textContent = snapshot.offscreen;
-    }
-    if (snapshot.mode === "structured") {
-      if (symbol && snapshot.symbol != null) {
-        symbol.textContent = snapshot.symbol;
-      }
-      if (whole) {
-        const textNode = getFirstTextNode(whole);
-        if (snapshot.hadWholeTextNode) {
-          if (textNode) {
-            textNode.nodeValue = snapshot.wholeText || "";
-          } else if (snapshot.wholeText != null) {
-            whole.insertBefore(document.createTextNode(snapshot.wholeText), decimal || null);
-          }
-        } else if (textNode) {
-          whole.removeChild(textNode);
-        }
-      }
-      if (decimal && snapshot.decimal != null) {
-        decimal.textContent = snapshot.decimal;
-      }
-      if (fraction && snapshot.fraction != null) {
-        fraction.textContent = snapshot.fraction;
-      }
-    } else if (snapshot.mode === "aria" && ariaHidden) {
-      ariaHidden.textContent = snapshot.value || "";
-    } else if (snapshot.mode === "text") {
-      priceEl.textContent = snapshot.value || "";
-    }
-
-    priceEl.removeAttribute(ATTR_AMAZON_ORIGINAL);
-    priceEl.removeAttribute(ATTR_AMAZON_CONVERTED);
-  }
-
-  function inferAmazonCurrencyFromUrl() {
-    try {
-      const url = new URL(window.location.href);
-      const currency = url.searchParams.get("currency");
-      if (currency) {
-        return currency.toUpperCase();
-      }
-    } catch (err) {
-      return null;
     }
     return null;
   }
 
   function inferAmazonCurrency() {
-    const fromUrl = inferAmazonCurrencyFromUrl();
-    if (fromUrl) {
-      return fromUrl;
+    if (siteCurrency) {
+      return siteCurrency;
     }
-    const fromPrices = inferAmazonCurrencyFromPrices();
-    if (fromPrices) {
-      return fromPrices;
+    const fromInputs = getCurrencyFromInputs();
+    if (fromInputs) {
+      siteCurrency = fromInputs;
+      return siteCurrency;
     }
-    const candidates = [
-      document.querySelector("#icp-currency-dropdown")?.value,
-      document.querySelector(".icp-currency-symbol")?.textContent,
-      document.querySelector("#icp-nav-flyout")?.textContent
-    ];
-    for (const candidate of candidates) {
-      if (!candidate) {
-        continue;
-      }
-      const detected = EPC.detectCurrency ? EPC.detectCurrency(candidate) : null;
-      if (detected?.currency) {
-        return detected.currency;
-      }
-    }
-    const inferred = EPC.inferSiteCurrency ? EPC.inferSiteCurrency() : null;
-    return inferred?.currency || null;
-  }
-
-  function inferAmazonCurrencyFromPrices() {
     const nodes = Array.from(
       document.querySelectorAll(".a-price .a-price-symbol, .a-price .a-offscreen")
     ).slice(0, 30);
@@ -627,79 +493,57 @@
       }
     }
     const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    if (entries.length === 0) {
-      return null;
+    if (entries.length > 0) {
+      siteCurrency = entries[0][0];
+      return siteCurrency;
     }
-    return entries[0][0];
+    const inferred = EPC.inferSiteCurrency ? EPC.inferSiteCurrency() : null;
+    siteCurrency = inferred?.currency || null;
+    return siteCurrency;
+  }
+
+  function ensureSourceCurrency(stats, currency) {
+    if (!stats.sourceCurrency && currency) {
+      stats.sourceCurrency = currency;
+    }
+  }
+
+  async function getRateCached(from, to) {
+    const key = `${from}->${to}`;
+    if (rateCache[key]) {
+      return rateCache[key];
+    }
+    const promise = currentContext
+      .getRate(from, to)
+      .then((res) => res?.rate || null)
+      .catch(() => null);
+    rateCache[key] = promise;
+    return promise;
   }
 
   async function processTargets(rootNode) {
     if (!currentStats || !currentFormatter) {
       return;
     }
-    restoreGenericArtifacts(rootNode);
-    const structured = collectStructuredTargets(rootNode);
-    const simple = collectSimpleTargets(rootNode);
-    const deliveryNodes = rootNode
-      ? Array.from(
-          (rootNode.nodeType === Node.DOCUMENT_NODE || rootNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE
-            ? rootNode
-            : rootNode).querySelectorAll
-            ? rootNode.querySelectorAll(DELIVERY_SELECTOR)
-            : []
-        )
-      : [];
 
-    if (!structured.length && !simple.length && !deliveryNodes.length) {
+    const priceTargets = collectTargets(rootNode, PRICE_SELECTOR).filter((el) => !shouldSkipElement(el));
+    const deliveryTargets = collectTargets(rootNode, DELIVERY_SELECTOR);
+
+    if (!priceTargets.length && !deliveryTargets.length) {
       updateStats();
       return;
     }
 
-    const tasks = [];
-
-    for (const el of structured) {
-      tasks.push({ kind: "structured", el });
-    }
-    for (const el of simple) {
-      tasks.push({ kind: "simple", el });
-    }
-    for (const el of deliveryNodes) {
-      tasks.push({ kind: "delivery", el });
-    }
-
-    for (const task of tasks) {
-      const el = task.el;
-      if (el.closest(REVIEW_SELECTOR)) {
-        continue;
-      }
-      const text =
-        task.kind === "structured"
-          ? getPriceText(el)
-          : task.kind === "delivery"
-          ? el.getAttribute("data-csa-c-delivery-price") || el.textContent || ""
-          : el.getAttribute("data-epc-original") || el.textContent || "";
-      const trimmed = (text || "").trim();
-      if (!isPriceLikeText(trimmed)) {
-        continue;
-      }
-      if (task.kind === "simple" && !hasExplicitCurrency(trimmed)) {
-        currentStats.skipped += 1;
-        bumpReason(currentStats, "missing_currency");
+    for (const priceEl of priceTargets) {
+      restoreGenericArtifactsInPrice(priceEl);
+      const priceText = getPriceText(priceEl);
+      if (!isPriceLikeText(priceText)) {
         continue;
       }
 
       currentStats.found += 1;
 
-      const detected =
-        task.kind === "structured"
-          ? detectCurrencyForElement(el, trimmed)
-          : task.kind === "delivery"
-          ? EPC.detectCurrency
-            ? EPC.detectCurrency(trimmed)
-            : null
-          : EPC.detectCurrency
-          ? EPC.detectCurrency(trimmed)
-          : null;
+      const detected = detectCurrencyFromPrice(priceEl, priceText);
       const fromCurrency = sourceOverride || detected?.currency || inferAmazonCurrency();
 
       if (!fromCurrency) {
@@ -716,7 +560,7 @@
         continue;
       }
 
-      const parsed = EPC.parsePrice ? EPC.parsePrice(trimmed) : null;
+      const parsed = EPC.parsePrice ? EPC.parsePrice(priceText) : null;
       if (parsed == null) {
         currentStats.skipped += 1;
         bumpReason(currentStats, "parse_failed");
@@ -730,17 +574,48 @@
         continue;
       }
 
-      let changed = false;
-      if (task.kind === "structured") {
-        changed = applyStructured(el, parsed * rate, currentFormatter);
-      } else if (task.kind === "delivery") {
-        changed = convertDeliveryMessage(el, rate, currentFormatter);
+      if (applyPrice(priceEl, parsed * rate, currentFormatter)) {
+        currentStats.converted += 1;
       } else {
-        const result = EPC.convertElement(el, rate, currentFormatter);
-        changed = Boolean(result?.changed);
+        currentStats.skipped += 1;
+        bumpReason(currentStats, "already_converted");
+      }
+    }
+
+    for (const deliveryEl of deliveryTargets) {
+      if (deliveryEl.closest(REVIEW_SELECTOR)) {
+        continue;
+      }
+      const raw = deliveryEl.getAttribute("data-csa-c-delivery-price") || "";
+      if (!isPriceLikeText(raw)) {
+        continue;
+      }
+      currentStats.found += 1;
+
+      const detected = EPC.detectCurrency ? EPC.detectCurrency(raw) : null;
+      const fromCurrency = sourceOverride || detected?.currency || inferAmazonCurrency();
+      if (!fromCurrency) {
+        currentStats.skipped += 1;
+        bumpReason(currentStats, "unknown_currency");
+        continue;
       }
 
-      if (changed) {
+      ensureSourceCurrency(currentStats, fromCurrency);
+
+      if (fromCurrency === targetCurrency) {
+        currentStats.skipped += 1;
+        bumpReason(currentStats, "same_currency");
+        continue;
+      }
+
+      const rate = await getRateCached(fromCurrency, targetCurrency);
+      if (!rate) {
+        currentStats.skipped += 1;
+        bumpReason(currentStats, "no_rate");
+        continue;
+      }
+
+      if (convertDeliveryMessage(deliveryEl, rate, currentFormatter)) {
         currentStats.converted += 1;
       } else {
         currentStats.skipped += 1;
@@ -751,26 +626,40 @@
     updateStats();
   }
 
+  async function runQueue() {
+    if (processing) {
+      return;
+    }
+    processing = true;
+    while (pendingRoots.length > 0) {
+      const rootNode = pendingRoots.shift();
+      await processTargets(rootNode);
+    }
+    processing = false;
+  }
+
+  function enqueue(rootNode) {
+    pendingRoots.push(rootNode);
+    runQueue();
+  }
+
   function restoreAll() {
-    const structured = document.querySelectorAll(`[${ATTR_AMAZON_ORIGINAL}]`);
-    for (const el of structured) {
-      restoreStructured(el);
+    const prices = document.querySelectorAll(`[${ATTR_AMAZON_ORIGINAL}]`);
+    for (const priceEl of prices) {
+      restorePrice(priceEl);
     }
-    const delivery = document.querySelectorAll(`[${ATTR_AMAZON_DELIVERY_ORIGINAL}]`);
-    for (const el of delivery) {
-      restoreDeliveryMessage(el);
-    }
-    const genericConverted = document.querySelectorAll("[data-epc-converted]");
-    for (const el of genericConverted) {
-      EPC.restoreElement(el);
+    const deliveries = document.querySelectorAll(`[${ATTR_AMAZON_DELIVERY_ORIGINAL}]`);
+    for (const deliveryEl of deliveries) {
+      restoreDeliveryMessage(deliveryEl);
     }
   }
 
   async function start(context) {
     currentContext = context;
     targetCurrency = context.targetCurrency || "EUR";
-    sourceOverride = context.sourceCurrencyOverride || null;
+    sourceOverride = context.sourceCurrencyOverride || context.forcedSourceCurrency || null;
     rateCache = {};
+    siteCurrency = null;
 
     currentFormatter = new Intl.NumberFormat(navigator.language, {
       style: "currency",
@@ -778,10 +667,12 @@
     });
 
     currentStats = createStats(context.hostname);
-    if (!currentStats.sourceCurrency) {
-      const initialCurrency = sourceOverride || inferAmazonCurrency();
-      if (initialCurrency) {
-        currentStats.sourceCurrency = initialCurrency;
+    if (sourceOverride) {
+      currentStats.sourceCurrency = sourceOverride;
+    } else {
+      const inferred = inferAmazonCurrency();
+      if (inferred) {
+        currentStats.sourceCurrency = inferred;
       }
     }
     updateStats();
@@ -792,7 +683,7 @@
       return;
     }
 
-    await processTargets(document);
+    enqueue(document);
 
     if (!observer && EPC.createObserver) {
       observer = EPC.createObserver({
@@ -800,7 +691,7 @@
         maxNodes: 1000,
         onNodes(nodes) {
           for (const node of nodes) {
-            processTargets(node);
+            enqueue(node);
           }
         }
       });
@@ -812,12 +703,15 @@
   function stop() {
     observer?.stop();
     observer = null;
+    processing = false;
+    pendingRoots = [];
     currentFormatter = null;
     currentContext = null;
     currentStats = null;
     rateCache = {};
     targetCurrency = null;
     sourceOverride = null;
+    siteCurrency = null;
     restoreAll();
   }
 
