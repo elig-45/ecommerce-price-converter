@@ -2,6 +2,21 @@
 
 A modern MV3 Chrome extension that converts CZK prices into EUR on supported ecommerce sites, including implicit formats like "2 450,-". Built for dynamic pages with an optimistic, fast popup UX.
 
+## Table of Contents
+- [Highlights](#highlights)
+- [Supported sites (v1)](#supported-sites-v1)
+- [Supported price formats](#supported-price-formats)
+- [Install from GitHub](#install-from-github)
+- [Load the extension (unpacked)](#load-the-extension-unpacked)
+- [Updating from GitHub](#updating-from-github)
+- [Usage](#usage)
+- [Exchange rates](#exchange-rates)
+- [Local storage](#local-storage)
+- [Permissions](#permissions)
+- [Project layout](#project-layout)
+- [v1 limitations](#v1-limitations)
+- [License](#license)
+
 ## Highlights
 - Automatic price conversion with double-conversion protection.
 - Dynamic pages supported via debounced MutationObserver.
@@ -51,7 +66,7 @@ cd ecommerce-price-converter
 - On network failure: fallback to cache if available, otherwise error state.
 
 ## Local storage
-```
+```javascript
 enabledGlobal: boolean
 siteOverrides: { [hostname]: boolean }
 preferredTargetCurrency: "EUR"
@@ -64,7 +79,7 @@ rateCache: { rate: number, ts: number }
 - `<all_urls>`: v1 to allow activation without manifest updates.
 
 ## Project layout
-```
+```plaintext
 background/service_worker.js
 content/bridge.js
 content/alza.js
