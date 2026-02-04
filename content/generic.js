@@ -44,7 +44,7 @@
   }
 
   function stripCurrencyMarkers(text) {
-    return text.replace(/€|£|\$|Kč|Kc|zł|Ft|CHF|EUR|USD|GBP|CZK|PLN|HUF/gi, "");
+    return text.replace(/€|£|\$|Kč|Kc|zł|zl|Ft|CHF|Fr|EUR|USD|GBP|CZK|PLN|HUF/gi, "");
   }
 
   function isPriceLikeText(text) {
