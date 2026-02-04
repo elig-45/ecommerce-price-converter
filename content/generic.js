@@ -84,7 +84,7 @@
     while (node && scanned < 1500) {
       const parent = node.parentElement;
       if (parent && !IGNORE_TAGS.has(parent.tagName) && parent.childElementCount === 0) {
-        const text = (node.nodeValue || "").trim();
+        const text = (node.nodeValue || "").replace(/[\u00A0\u202F]/g, " ").trim();
         if (isPriceLikeText(text)) {
           candidates.add(parent);
         }
@@ -132,6 +132,9 @@
   }
 
   async function processElements(rootNode) {
+    if (!currentStats || !currentFormatter) {
+      return;
+    }
     const elements = collectCandidateElements(rootNode);
     if (!elements.length) {
       updateStats();
