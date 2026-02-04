@@ -10,22 +10,11 @@ const DEFAULT_SETTINGS = {
   preferredTargetCurrency: DEFAULT_TO
 };
 
-let adapterPromise = null;
-
 function getSiteAdapter() {
   if (!isSupportedSite) {
-    return Promise.resolve(null);
+    return null;
   }
-  if (!adapterPromise) {
-    const url = chrome.runtime.getURL("content/alza.js");
-    adapterPromise = import(url)
-      .then((mod) => (mod && mod.default ? mod.default : null))
-      .catch((err) => {
-        console.error("[epc] Failed to load adapter", err);
-        return null;
-      });
-  }
-  return adapterPromise;
+  return window.EPC?.siteAdapters?.alza || null;
 }
 
 function getEffectiveEnabled(settings) {
@@ -70,7 +59,7 @@ async function requestRate(targetCurrency) {
 }
 
 async function applyConversion() {
-  const siteAdapter = await getSiteAdapter();
+  const siteAdapter = getSiteAdapter();
   if (!siteAdapter) {
     throw new Error("unsupported_site");
   }
@@ -85,8 +74,8 @@ async function applyConversion() {
   return { ok: true };
 }
 
-async function restoreConversion() {
-  const siteAdapter = await getSiteAdapter();
+function restoreConversion() {
+  const siteAdapter = getSiteAdapter();
   if (!siteAdapter) {
     throw new Error("unsupported_site");
   }
@@ -107,15 +96,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "CONTENT_RESTORE") {
-    restoreConversion()
-      .then(() => sendResponse({ ok: true }))
-      .catch((err) => sendResponse({ ok: false, error: err?.message || "restore_failed" }));
-    return true;
+    try {
+      restoreConversion();
+      sendResponse({ ok: true });
+    } catch (err) {
+      sendResponse({ ok: false, error: err?.message || "restore_failed" });
+    }
   }
 });
 
 async function initAutoApply() {
-  const siteAdapter = await getSiteAdapter();
+  const siteAdapter = getSiteAdapter();
   if (!siteAdapter) {
     return;
   }

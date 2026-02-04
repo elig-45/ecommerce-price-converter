@@ -12,7 +12,12 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content/bridge.js"]
+      "js": [
+        "core/price_parser.js",
+        "core/price_converter.js",
+        "content/alza.js",
+        "content/bridge.js"
+      ]
     }
   ],
   "action": {
