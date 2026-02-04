@@ -351,14 +351,56 @@ body[data-loading="true"] .card {
 }
 
 .message-card {
-  gap: 8px;
+  gap: 10px;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pill {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(31, 143, 107, 0.12);
+  color: var(--accent-strong);
+  border: 1px solid rgba(31, 143, 107, 0.25);
+}
+
+.message-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .message {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12.5px;
+  line-height: 1.55;
   color: var(--muted);
+}
+
+.message-media {
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
 @keyframes shimmer {
