@@ -105,5 +105,4 @@ manifest.json
 ```
 
 ## License
-
-See `LICENSE`.
+See [LICENSE](LICENSE).
