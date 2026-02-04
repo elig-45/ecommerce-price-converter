@@ -41,7 +41,6 @@ const statFound = document.getElementById("statFound");
 const statConverted = document.getElementById("statConverted");
 const statSkipped = document.getElementById("statSkipped");
 const reportBtn = document.getElementById("reportBtn");
-const copyBtn = document.getElementById("copyBtn");
 const toastContainer = document.getElementById("toastContainer");
 const amazonMessage = document.getElementById("amazonMessage");
 const mainContent = document.getElementById("mainContent");
@@ -378,6 +377,10 @@ function buildDebugInfo() {
   return lines.join("\n");
 }
 
+function exposeDebugInfo() {
+  EPC.getDebugInfo = () => buildDebugInfo();
+}
+
 function buildIssueUrl() {
   const siteLabel = hostname || t("unknown_site", null, "unknown site");
   const title = t("issue_title", { site: siteLabel }, `Price conversion issue on ${siteLabel}`);
@@ -427,6 +430,7 @@ async function init() {
 
   setAppLoading(false);
   await loadStats();
+  exposeDebugInfo();
 }
 
 toggleGlobal.addEventListener("change", async () => {
@@ -605,15 +609,6 @@ reportBtn.addEventListener("click", () => {
     return;
   }
   chrome.tabs.create({ url: buildIssueUrl() });
-});
-
-copyBtn.addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(buildDebugInfo());
-    showToast(t("debug_info_copied", null, "Debug info copied."), "success");
-  } catch (err) {
-    showToast(t("copy_failed", null, "Copy failed."), "error");
-  }
 });
 
 init();

@@ -14,7 +14,7 @@
       </header>
 
       <div id="mainContent">
-        <section class="card">
+        <section class="card currency-card">
           <div class="row">
             <div>
               <div class="label" data-i18n="popup_global_label">Global conversion</div>
@@ -38,10 +38,17 @@
         </section>
 
         <section class="card">
-          <div class="label" data-i18n="popup_target_label">Target currency</div>
-          <select id="targetCurrency" class="select"></select>
-          <div class="label" data-i18n="popup_source_label">Source currency (this site)</div>
-          <select id="sourceCurrency" class="select"></select>
+          <div class="currency-row">
+            <div class="currency-col">
+              <div class="label" data-i18n="popup_source_label">Source currency (this site)</div>
+              <select id="sourceCurrency" class="select"></select>
+            </div>
+            <div class="currency-arrow" aria-hidden="true">→</div>
+            <div class="currency-col">
+              <div class="label" data-i18n="popup_target_label">Target currency</div>
+              <select id="targetCurrency" class="select"></select>
+            </div>
+          </div>
           <div class="subtext" id="sourceHint">--</div>
         </section>
 
@@ -80,10 +87,9 @@
           </div>
         </section>
 
-        <section class="card actions-card">
-          <button class="btn" id="reportBtn" data-i18n="popup_report">Report this site</button>
-          <button class="btn ghost" id="copyBtn" data-i18n="popup_copy_debug">Copy debug info</button>
-        </section>
+      <section class="card actions-card">
+        <button class="btn" id="reportBtn" data-i18n="popup_report">Report this site</button>
+      </section>
       </div>
 
       <section class="card message-card" id="amazonMessage" hidden>

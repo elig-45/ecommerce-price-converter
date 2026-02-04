@@ -24,7 +24,6 @@
   "popup_stat_converted": { "message": "Convertis" },
   "popup_stat_skipped": { "message": "Ignorés" },
   "popup_report": { "message": "Signaler ce site" },
-  "popup_copy_debug": { "message": "Copier les infos de débogage" },
   "unsupported_page": { "message": "Page non prise en charge" },
   "source_hint_forced": { "message": "Forcé : {value}" },
   "source_hint_override": { "message": "Surcharge : {value}" },
@@ -48,8 +47,6 @@
     "message": "Taux actualisé, mais la mise à jour de la page a échoué."
   },
   "no_active_site": { "message": "Aucun site actif à signaler." },
-  "debug_info_copied": { "message": "Infos de débogage copiées." },
-  "copy_failed": { "message": "La copie a échoué." },
   "issue_title": { "message": "Problème de conversion de prix sur {site}" },
   "issue_report_heading": { "message": "Rapport" },
   "unknown_site": { "message": "site inconnu" },

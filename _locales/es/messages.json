@@ -24,7 +24,6 @@
   "popup_stat_converted": { "message": "Convertidas" },
   "popup_stat_skipped": { "message": "Omitidas" },
   "popup_report": { "message": "Reportar este sitio" },
-  "popup_copy_debug": { "message": "Copiar info de depuración" },
   "unsupported_page": { "message": "Página no compatible" },
   "source_hint_forced": { "message": "Forzado: {value}" },
   "source_hint_override": { "message": "Sobrescrito: {value}" },
@@ -50,8 +49,6 @@
     "message": "Tasa actualizada, pero falló la actualización de la página."
   },
   "no_active_site": { "message": "No hay un sitio activo para reportar." },
-  "debug_info_copied": { "message": "Información de depuración copiada." },
-  "copy_failed": { "message": "La copia falló." },
   "issue_title": { "message": "Problema de conversión de precios en {site}" },
   "issue_report_heading": { "message": "Informe" },
   "unknown_site": { "message": "sitio desconocido" },
