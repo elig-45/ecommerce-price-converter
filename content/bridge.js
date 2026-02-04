@@ -1,35 +1,17 @@
-const DEFAULT_FROM = "CZK";
-const DEFAULT_TO = "EUR";
-
 const hostname = window.location.hostname || "";
-const isSupportedSite = hostname.endsWith("alza.cz");
+const EPC = (window.EPC = window.EPC || {});
 
-const DEFAULT_SETTINGS = {
+const DEFAULT_SETTINGS = EPC.storage?.DEFAULT_SETTINGS || {
   enabledGlobal: true,
   siteOverrides: {},
-  preferredTargetCurrency: DEFAULT_TO
+  preferredTargetCurrency: "EUR",
+  siteCurrencyOverrides: {},
+  rateCache: {},
+  lastRunStats: null
 };
 
-function log(message, data) {
-  const ts = new Date().toISOString();
-  if (data !== undefined) {
-    console.log(`[epc ${ts}] ${message}`, data);
-  } else {
-    console.log(`[epc ${ts}] ${message}`);
-  }
-}
-
-function getSiteAdapter() {
-  if (!isSupportedSite) {
-    log("⚠️ Unsupported site", { hostname });
-    return null;
-  }
-  const adapter = window.EPC?.siteAdapters?.alza || null;
-  if (!adapter) {
-    log("⚠️ Adapter not ready", { hostname, hasEpc: Boolean(window.EPC) });
-  }
-  return adapter;
-}
+let activeAdapter = null;
+let lastStats = null;
 
 function getEffectiveEnabled(settings) {
   const override = settings.siteOverrides?.[hostname];
@@ -39,77 +21,93 @@ function getEffectiveEnabled(settings) {
   return Boolean(settings.enabledGlobal);
 }
 
-function createFormatter(currency) {
-  return new Intl.NumberFormat(navigator.language, {
-    style: "currency",
-    currency
-  });
+function selectAdapter() {
+  const rule = EPC.rules?.selectAdapter ? EPC.rules.selectAdapter(hostname) : { adapter: "generic" };
+  const adapter = EPC.siteAdapters?.[rule.adapter] || EPC.siteAdapters?.generic || null;
+  return { adapter, forcedSourceCurrency: rule.forcedSourceCurrency || null };
 }
 
 function sendRuntimeMessage(message) {
-  log("📨 Sending runtime message", message);
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(message, (response) => {
       if (chrome.runtime.lastError) {
-        log("❌ Runtime message error", chrome.runtime.lastError.message);
         resolve({ ok: false, error: chrome.runtime.lastError.message });
       } else {
-        log("✅ Runtime message response", response);
         resolve(response);
       }
     });
   });
 }
 
-async function requestRate(targetCurrency) {
-  log("💱 Requesting rate", { from: DEFAULT_FROM, to: targetCurrency });
+async function getRate(from, to) {
   const response = await sendRuntimeMessage({
     type: "RATE_GET",
-    from: DEFAULT_FROM,
-    to: targetCurrency
+    from,
+    to
   });
-
   if (!response || !response.ok) {
     throw new Error(response?.error || "rate_unavailable");
   }
-
   return response;
 }
 
+function updateStats(stats) {
+  lastStats = stats;
+  chrome.storage.local.set({ lastRunStats: stats });
+}
+
+async function getSettings() {
+  if (EPC.storage?.getSettings) {
+    return EPC.storage.getSettings();
+  }
+  return chrome.storage.local.get(DEFAULT_SETTINGS);
+}
+
 async function applyConversion() {
-  log("🚀 Apply conversion requested");
-  const siteAdapter = getSiteAdapter();
-  if (!siteAdapter) {
-    log("❌ Apply failed: unsupported_site");
-    throw new Error("unsupported_site");
+  const settings = await getSettings();
+  const targetCurrency = settings.preferredTargetCurrency || "EUR";
+  const sourceOverride = settings.siteCurrencyOverrides?.[hostname] || null;
+  const { adapter, forcedSourceCurrency } = selectAdapter();
+
+  if (!adapter || typeof adapter.start !== "function") {
+    throw new Error("adapter_unavailable");
   }
 
-  const settings = await chrome.storage.local.get(DEFAULT_SETTINGS);
-  log("📦 Loaded settings", settings);
-  const targetCurrency = settings.preferredTargetCurrency || DEFAULT_TO;
-  const formatter = createFormatter(targetCurrency);
-  const rateResponse = await requestRate(targetCurrency);
+  if (activeAdapter && activeAdapter !== adapter && typeof activeAdapter.stop === "function") {
+    activeAdapter.stop();
+  }
 
-  siteAdapter.start({ rate: rateResponse.rate, formatter });
-  log("✅ Conversion started", { rate: rateResponse.rate, currency: targetCurrency });
+  activeAdapter = adapter;
+
+  await adapter.start({
+    hostname,
+    targetCurrency,
+    sourceCurrencyOverride: sourceOverride,
+    forcedSourceCurrency,
+    getRate,
+    updateStats
+  });
 
   return { ok: true };
 }
 
 function restoreConversion() {
-  log("↩️ Restore conversion requested");
-  const siteAdapter = getSiteAdapter();
-  if (!siteAdapter) {
-    log("❌ Restore failed: unsupported_site");
-    throw new Error("unsupported_site");
+  if (activeAdapter?.stop) {
+    activeAdapter.stop();
   }
-  siteAdapter.stop();
-  log("✅ Conversion stopped");
+  const emptyStats = {
+    hostname,
+    found: 0,
+    converted: 0,
+    skipped: 0,
+    reasonCounts: {},
+    timestamp: Date.now()
+  };
+  updateStats(emptyStats);
   return { ok: true };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  log("📥 Content message received", message);
   if (!message || typeof message.type !== "string") {
     return;
   }
@@ -129,25 +127,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ ok: false, error: err?.message || "restore_failed" });
     }
   }
+
+  if (message.type === "STATS_GET") {
+    sendResponse({ ok: true, stats: lastStats });
+  }
 });
 
 async function initAutoApply() {
-  log("🟡 initAutoApply()");
-  const siteAdapter = getSiteAdapter();
-  if (!siteAdapter) {
-    return;
-  }
-  const settings = await chrome.storage.local.get(DEFAULT_SETTINGS);
-  log("📦 Loaded settings (auto)", settings);
+  const settings = await getSettings();
   if (getEffectiveEnabled(settings)) {
     try {
       await applyConversion();
     } catch (err) {
-      log("❌ Auto-apply failed", err?.message || err);
-      // Rate unavailable or other error; stay disabled.
+      // stay disabled on error
     }
-  } else {
-    log("⏸️ Auto-apply skipped (disabled)");
   }
 }
 

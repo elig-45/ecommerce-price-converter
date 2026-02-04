@@ -6,10 +6,10 @@
     { re: /€|\bEUR\b/i, currency: "EUR", confidence: "high", weight: 3 },
     { re: /\bUSD\b|\bUS\s*\$\b|\$/i, currency: "USD", confidence: "medium", weight: 1 },
     { re: /£|\bGBP\b/i, currency: "GBP", confidence: "high", weight: 3 },
-    { re: /\bCZK\b|Kč/i, currency: "CZK", confidence: "high", weight: 3 },
+    { re: /\bCZK\b|Kč|Kc/i, currency: "CZK", confidence: "high", weight: 3 },
     { re: /\bPLN\b|zł/i, currency: "PLN", confidence: "high", weight: 3 },
     { re: /\bHUF\b|Ft/i, currency: "HUF", confidence: "high", weight: 2 },
-    { re: /\bCHF\b|Fr\.?/i, currency: "CHF", confidence: "medium", weight: 2 }
+    { re: /\bCHF\b|(?:\bFr\b\.?)/i, currency: "CHF", confidence: "medium", weight: 2 }
   ];
 
   function detectCurrency(text) {
