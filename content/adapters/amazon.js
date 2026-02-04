@@ -187,7 +187,9 @@
       if (
         parent &&
         !IGNORE_TAGS.has(parent.tagName) &&
+        !parent.matches(STRUCTURED_PART_SELECTOR) &&
         !parent.closest(STRUCTURED_SELECTOR) &&
+        !parent.closest(STRUCTURED_PART_SELECTOR) &&
         !parent.closest(REVIEW_SELECTOR) &&
         !parent.closest(EXCLUDED_SIMPLE_SELECTOR)
       ) {
@@ -200,6 +202,31 @@
       node = walker.nextNode();
     }
     return Array.from(candidates);
+  }
+
+  function restoreGenericArtifacts(rootNode) {
+    if (!rootNode || !EPC.restoreElement) {
+      return;
+    }
+    const scope =
+      rootNode.nodeType === Node.DOCUMENT_NODE ||
+      rootNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE
+        ? rootNode
+        : rootNode;
+    if (!scope.querySelectorAll) {
+      return;
+    }
+    const targets = scope.querySelectorAll(
+      [
+        ".a-price [data-epc-converted]",
+        "#selectQuantity [data-epc-converted]",
+        "#quantity [data-epc-converted]",
+        ".a-dropdown-prompt[data-epc-converted]"
+      ].join(",")
+    );
+    for (const node of targets) {
+      EPC.restoreElement(node);
+    }
   }
 
   function updateStats() {
@@ -230,8 +257,14 @@
       return "";
     }
     const offscreen = priceEl.querySelector(".a-offscreen");
-    if (offscreen && offscreen.textContent) {
-      return offscreen.textContent.trim();
+    if (offscreen) {
+      const original = offscreen.getAttribute("data-epc-original");
+      if (original) {
+        return original.trim();
+      }
+      if (offscreen.textContent) {
+        return offscreen.textContent.trim();
+      }
     }
     const ariaHidden = priceEl.querySelector('span[aria-hidden="true"]');
     if (ariaHidden && ariaHidden.textContent) {
@@ -250,13 +283,13 @@
   function detectCurrencyForElement(el, text) {
     if (EPC.detectCurrency) {
       const direct = EPC.detectCurrency(text || "");
-      if (direct?.currency) {
-        return direct;
-      }
       const symbol = el?.querySelector(".a-price-symbol")?.textContent || "";
       const symbolDetected = EPC.detectCurrency(symbol);
       if (symbolDetected?.currency) {
         return symbolDetected;
+      }
+      if (direct?.currency) {
+        return direct;
       }
     }
     return null;
@@ -604,6 +637,7 @@
     if (!currentStats || !currentFormatter) {
       return;
     }
+    restoreGenericArtifacts(rootNode);
     const structured = collectStructuredTargets(rootNode);
     const simple = collectSimpleTargets(rootNode);
     const deliveryNodes = rootNode
@@ -646,6 +680,11 @@
           : el.getAttribute("data-epc-original") || el.textContent || "";
       const trimmed = (text || "").trim();
       if (!isPriceLikeText(trimmed)) {
+        continue;
+      }
+      if (task.kind === "simple" && !hasExplicitCurrency(trimmed)) {
+        currentStats.skipped += 1;
+        bumpReason(currentStats, "missing_currency");
         continue;
       }
 

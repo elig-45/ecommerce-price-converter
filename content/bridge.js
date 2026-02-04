@@ -23,7 +23,11 @@ function getEffectiveEnabled(settings) {
 
 function selectAdapter() {
   const rule = EPC.rules?.selectAdapter ? EPC.rules.selectAdapter(hostname) : { adapter: "generic" };
-  const adapter = EPC.siteAdapters?.[rule.adapter] || EPC.siteAdapters?.generic || null;
+  const directAdapter = EPC.siteAdapters?.[rule.adapter] || null;
+  if (rule.adapter && rule.adapter !== "generic") {
+    return { adapter: directAdapter, forcedSourceCurrency: rule.forcedSourceCurrency || null };
+  }
+  const adapter = directAdapter || EPC.siteAdapters?.generic || null;
   return { adapter, forcedSourceCurrency: rule.forcedSourceCurrency || null };
 }
 
@@ -53,7 +57,17 @@ async function getRate(from, to) {
 
 function updateStats(stats) {
   lastStats = stats;
-  chrome.storage.local.set({ lastRunStats: stats });
+  if (!chrome?.runtime?.id || !chrome?.storage?.local) {
+    return;
+  }
+  try {
+    const result = chrome.storage.local.set({ lastRunStats: stats });
+    if (result && typeof result.catch === "function") {
+      result.catch(() => {});
+    }
+  } catch (err) {
+    // Extension context may be invalidated during reloads; ignore.
+  }
 }
 
 async function getSettings() {
