@@ -23,7 +23,7 @@
   "popup_stat_found": { "message": "Trouvés" },
   "popup_stat_converted": { "message": "Convertis" },
   "popup_stat_skipped": { "message": "Ignorés" },
-  "popup_report": { "message": "Signaler ce site" },
+  "popup_report": { "message": "Signaler un dysfonctionnement" },
   "unsupported_page": { "message": "Page non prise en charge" },
   "source_hint_forced": { "message": "Forcé : {value}" },
   "source_hint_override": { "message": "Surcharge : {value}" },
