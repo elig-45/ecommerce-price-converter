@@ -217,6 +217,18 @@ async function applyToContent() {
   return response;
 }
 
+function isIgnorableMessageError(message) {
+  if (!message) {
+    return false;
+  }
+  return (
+    message.includes("Receiving end does not exist") ||
+    message.includes("message port closed") ||
+    message.includes("No tab with id") ||
+    message.includes("no_active_tab")
+  );
+}
+
 async function loadRate(force = false) {
   const { source } = getSourceCurrency();
   if (!source) {
@@ -351,6 +363,12 @@ toggleGlobal.addEventListener("change", async () => {
     await applyToContent();
     await loadStats();
   } catch (err) {
+    const msg = err?.message || "";
+    if (isIgnorableMessageError(msg)) {
+      showToast("Settings saved. Will apply on the next page load.", "error");
+      return;
+    }
+
     enabledGlobal = previousGlobal;
     siteOverrides = previousOverrides;
     toggleGlobal.checked = previousGlobal;
@@ -384,6 +402,12 @@ toggleSite.addEventListener("change", async () => {
     await applyToContent();
     await loadStats();
   } catch (err) {
+    const msg = err?.message || "";
+    if (isIgnorableMessageError(msg)) {
+      showToast("Settings saved. Will apply on the next page load.", "error");
+      return;
+    }
+
     siteOverrides = previousOverrides;
     toggleSite.checked = previousEffective;
     await chrome.storage.local.set({ siteOverrides: previousOverrides });
@@ -405,6 +429,12 @@ targetSelect.addEventListener("change", async () => {
     await loadStats();
     await loadRate(false);
   } catch (err) {
+    const msg = err?.message || "";
+    if (isIgnorableMessageError(msg)) {
+      showToast("Settings saved. Will apply on the next page load.", "error");
+      return;
+    }
+
     preferredTargetCurrency = previousTarget;
     targetSelect.value = previousTarget;
     updateSubtitle();
@@ -434,6 +464,12 @@ sourceSelect.addEventListener("change", async () => {
     }
     await loadStats();
   } catch (err) {
+    const msg = err?.message || "";
+    if (isIgnorableMessageError(msg)) {
+      showToast("Settings saved. Will apply on the next page load.", "error");
+      return;
+    }
+
     siteCurrencyOverrides = previousOverrides;
     sourceSelect.value = previousValue;
     await chrome.storage.local.set({ siteCurrencyOverrides: previousOverrides });
@@ -452,6 +488,11 @@ refreshBtn.addEventListener("click", async () => {
       await applyToContent();
       await loadStats();
     } catch (err) {
+      const msg = err?.message || "";
+      if (isIgnorableMessageError(msg)) {
+        showToast("Rate refreshed. Will apply on the next page load.", "error");
+        return;
+      }
       showToast("Rate refreshed, but page update failed.", "error");
     }
   }

@@ -3,13 +3,13 @@
   const EPC = (root.EPC = root.EPC || {});
 
   const MARKERS = [
-    { re: /€|\bEUR\b/i, currency: "EUR", confidence: "high", weight: 3 },
+    { re: /€|(?:^|[^A-Z])EUR(?=[^A-Z]|$)/i, currency: "EUR", confidence: "high", weight: 3 },
     { re: /\bUSD\b|\bUS\s*\$\b|\$/i, currency: "USD", confidence: "medium", weight: 1 },
-    { re: /£|\bGBP\b/i, currency: "GBP", confidence: "high", weight: 3 },
-    { re: /\bCZK\b|Kč|Kc/i, currency: "CZK", confidence: "high", weight: 3 },
-    { re: /\bPLN\b|zł|zl/i, currency: "PLN", confidence: "high", weight: 3 },
-    { re: /\bHUF\b|Ft/i, currency: "HUF", confidence: "high", weight: 2 },
-    { re: /\bCHF\b|(?:\bFr\b\.?)/i, currency: "CHF", confidence: "medium", weight: 2 }
+    { re: /£|(?:^|[^A-Z])GBP(?=[^A-Z]|$)/i, currency: "GBP", confidence: "high", weight: 3 },
+    { re: /(?:^|[^A-Z])CZK(?=[^A-Z]|$)|Kč|Kc/i, currency: "CZK", confidence: "high", weight: 3 },
+    { re: /(?:^|[^A-Z])PLN(?=[^A-Z]|$)|zł|zl/i, currency: "PLN", confidence: "high", weight: 3 },
+    { re: /(?:^|[^A-Z])HUF(?=[^A-Z]|$)|Ft/i, currency: "HUF", confidence: "high", weight: 2 },
+    { re: /(?:^|[^A-Z])CHF(?=[^A-Z]|$)|(?:\bFr\b\.?)/i, currency: "CHF", confidence: "medium", weight: 2 }
   ];
 
   function detectCurrency(text) {

@@ -19,6 +19,7 @@
         "core/storage.js",
         "content/observer.js",
         "content/adapters/alza.js",
+        "content/adapters/amazon.js",
         "content/generic.js",
         "content/bridge.js"
       ]

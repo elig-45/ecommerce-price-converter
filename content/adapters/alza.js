@@ -6,7 +6,11 @@
   const selectors = [
     "span.js-price-box__primary-price__value",
     "span.price-box__primary-price__value",
-    "span.coupon-block__price"
+    "span.coupon-block__price",
+    "table.o1grid td.c5",
+    "table.o1sum td.c2 span",
+    ".o1sum span.last.price",
+    ".obuttons-inner_price_price"
   ];
 
   const selectorQuery = selectors.join(",");

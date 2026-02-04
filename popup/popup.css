@@ -107,10 +107,15 @@ body {
   padding: 8px 10px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.85);
   color: var(--text);
   font-size: 13px;
   transition: border var(--speed) ease, box-shadow var(--speed) ease;
+}
+
+.select option {
+  color: #1c1a17;
+  background: #ffffff;
 }
 
 .select:focus {
@@ -360,5 +365,17 @@ body[data-loading="true"] .card {
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .select {
+    background: rgba(15, 14, 12, 0.85);
+    color: var(--text);
+  }
+
+  .select option {
+    color: #f3eee8;
+    background: #151412;
   }
 }

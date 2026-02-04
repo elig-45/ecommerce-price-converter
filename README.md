@@ -1,6 +1,6 @@
 # ecommerce-price-converter
 
-A global MV3 Chrome extension that converts ecommerce prices into your chosen currency. It includes a generic multi-site engine plus a dedicated Alza.cz adapter for robust compatibility.
+A global MV3 Chrome extension that converts ecommerce prices into your chosen currency. The goal is to stay general-purpose, but I also build site-specific adapters for certain stores (for example Alza.cz, and Amazon with multi-currency support).
 
 ## Highlights
 
@@ -15,6 +15,7 @@ A global MV3 Chrome extension that converts ecommerce prices into your chosen cu
 
 - Generic engine: works on most ecommerce sites.
 - Alza.cz: dedicated adapter with robust selectors.
+- Amazon: multi-currency adapter (in progress / targeted support).
 
 ## Supported price formats
 
