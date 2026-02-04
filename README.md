@@ -35,13 +35,13 @@ A modern MV3 Chrome extension that converts CZK prices into EUR on supported eco
 ## Install from GitHub
 
 ### Option A: Download ZIP
-1. Open the GitHub repository page.
+1. Go to https://github.com/elig-45/ecommerce-price-converter
 2. Click **Code** -> **Download ZIP**.
 3. Unzip it to a folder (make sure `manifest.json` is at the root).
 
 ### Option B: Clone the repo
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/elig-45/ecommerce-price-converter.git
 cd ecommerce-price-converter
 ```
 
@@ -52,7 +52,7 @@ cd ecommerce-price-converter
 4. Visit https://www.alza.cz and open the popup to enable conversion.
 
 ## Updating from GitHub
-- If you downloaded a ZIP: download the latest ZIP and replace your folder, then click **Reload** on `chrome://extensions`.
+- If you downloaded a ZIP: download the latest ZIP from https://github.com/elig-45/ecommerce-price-converter and replace your folder, then click **Reload** on `chrome://extensions`.
 - If you cloned: `git pull`, then click **Reload** on `chrome://extensions`.
 
 ## Usage
