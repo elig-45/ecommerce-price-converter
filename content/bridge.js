@@ -1,15 +1,32 @@
-import alzaAdapter from "./alza.js";
-import { DEFAULT_FROM, DEFAULT_TO } from "../core/currency_service.js";
+const DEFAULT_FROM = "CZK";
+const DEFAULT_TO = "EUR";
 
 const hostname = window.location.hostname || "";
 const isSupportedSite = hostname.endsWith("alza.cz");
-const siteAdapter = isSupportedSite ? alzaAdapter : null;
 
 const DEFAULT_SETTINGS = {
   enabledGlobal: true,
   siteOverrides: {},
   preferredTargetCurrency: DEFAULT_TO
 };
+
+let adapterPromise = null;
+
+function getSiteAdapter() {
+  if (!isSupportedSite) {
+    return Promise.resolve(null);
+  }
+  if (!adapterPromise) {
+    const url = chrome.runtime.getURL("content/alza.js");
+    adapterPromise = import(url)
+      .then((mod) => (mod && mod.default ? mod.default : null))
+      .catch((err) => {
+        console.error("[epc] Failed to load adapter", err);
+        return null;
+      });
+  }
+  return adapterPromise;
+}
 
 function getEffectiveEnabled(settings) {
   const override = settings.siteOverrides?.[hostname];
@@ -53,6 +70,7 @@ async function requestRate(targetCurrency) {
 }
 
 async function applyConversion() {
+  const siteAdapter = await getSiteAdapter();
   if (!siteAdapter) {
     throw new Error("unsupported_site");
   }
@@ -67,7 +85,8 @@ async function applyConversion() {
   return { ok: true };
 }
 
-function restoreConversion() {
+async function restoreConversion() {
+  const siteAdapter = await getSiteAdapter();
   if (!siteAdapter) {
     throw new Error("unsupported_site");
   }
@@ -88,16 +107,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "CONTENT_RESTORE") {
-    try {
-      restoreConversion();
-      sendResponse({ ok: true });
-    } catch (err) {
-      sendResponse({ ok: false, error: err?.message || "restore_failed" });
-    }
+    restoreConversion()
+      .then(() => sendResponse({ ok: true }))
+      .catch((err) => sendResponse({ ok: false, error: err?.message || "restore_failed" }));
+    return true;
   }
 });
 
 async function initAutoApply() {
+  const siteAdapter = await getSiteAdapter();
   if (!siteAdapter) {
     return;
   }
