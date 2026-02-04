@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "ecommerce-price-converter",
+  "version": "1.0.0",
+  "description": "Convert ecommerce prices from CZK to EUR on supported sites.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background/service_worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/bridge.js"],
+      "type": "module"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Price Converter"
+  }
+}

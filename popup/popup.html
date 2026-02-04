@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Price Converter</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body data-loading="true">
+    <div class="app">
+      <header class="header">
+        <div class="title">ecommerce-price-converter</div>
+        <div class="subtitle">CZK -> EUR</div>
+      </header>
+
+      <section class="card">
+        <div class="row">
+          <div>
+            <div class="label">Global</div>
+            <div class="subtext">Convert prices on supported sites</div>
+          </div>
+          <label class="switch">
+            <input id="toggleGlobal" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="row">
+          <div>
+            <div class="label">This site</div>
+            <div class="subtext" id="siteSubtext">Loading...</div>
+          </div>
+          <label class="switch">
+            <input id="toggleSite" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card rate-card">
+        <div class="rate-main">
+          <div class="label">Exchange rate</div>
+          <div class="rate-value" id="rateValue">
+            <span class="rate-text" id="rateText">--</span>
+            <span class="skeleton skeleton-text"></span>
+          </div>
+        </div>
+        <div class="rate-meta">
+          <div class="last-updated" id="lastUpdated">Last updated: --</div>
+          <button id="refreshBtn" class="btn" type="button">
+            <span class="btn-label">Refresh rate</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
