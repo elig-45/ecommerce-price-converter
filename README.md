@@ -2,6 +2,21 @@
 
 A modern MV3 Chrome extension that converts CZK prices into EUR on supported ecommerce sites, including implicit formats like "2 450,-". Built for dynamic pages with an optimistic, fast popup UX.
 
+## Table of Contents
+- [Highlights](#highlights)
+- [Supported sites (v1)](#supported-sites-v1)
+- [Supported price formats](#supported-price-formats)
+- [Install from GitHub](#install-from-github)
+- [Load the extension (unpacked)](#load-the-extension-unpacked)
+- [Updating from GitHub](#updating-from-github)
+- [Usage](#usage)
+- [Exchange rates](#exchange-rates)
+- [Local storage](#local-storage)
+- [Permissions](#permissions)
+- [Project layout](#project-layout)
+- [v1 limitations](#v1-limitations)
+- [License](#license)
+
 ## Highlights
 - Automatic price conversion with double-conversion protection.
 - Dynamic pages supported via debounced MutationObserver.
@@ -20,13 +35,13 @@ A modern MV3 Chrome extension that converts CZK prices into EUR on supported eco
 ## Install from GitHub
 
 ### Option A: Download ZIP
-1. Open the GitHub repository page.
+1. Go to https://github.com/elig-45/ecommerce-price-converter
 2. Click **Code** -> **Download ZIP**.
 3. Unzip it to a folder (make sure `manifest.json` is at the root).
 
 ### Option B: Clone the repo
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/elig-45/ecommerce-price-converter.git
 cd ecommerce-price-converter
 ```
 
@@ -37,7 +52,7 @@ cd ecommerce-price-converter
 4. Visit https://www.alza.cz and open the popup to enable conversion.
 
 ## Updating from GitHub
-- If you downloaded a ZIP: download the latest ZIP and replace your folder, then click **Reload** on `chrome://extensions`.
+- If you downloaded a ZIP: download the latest ZIP from https://github.com/elig-45/ecommerce-price-converter and replace your folder, then click **Reload** on `chrome://extensions`.
 - If you cloned: `git pull`, then click **Reload** on `chrome://extensions`.
 
 ## Usage
@@ -51,7 +66,7 @@ cd ecommerce-price-converter
 - On network failure: fallback to cache if available, otherwise error state.
 
 ## Local storage
-```
+```javascript
 enabledGlobal: boolean
 siteOverrides: { [hostname]: boolean }
 preferredTargetCurrency: "EUR"
@@ -64,7 +79,7 @@ rateCache: { rate: number, ts: number }
 - `<all_urls>`: v1 to allow activation without manifest updates.
 
 ## Project layout
-```
+```plaintext
 background/service_worker.js
 content/bridge.js
 content/alza.js
