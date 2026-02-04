@@ -59,6 +59,10 @@
     }
     const targets = collectTargets(rootNode);
     if (targets.length === 0) {
+      currentStats.timestamp = Date.now();
+      if (currentContext?.updateStats) {
+        currentContext.updateStats(currentStats);
+      }
       return;
     }
 
@@ -107,6 +111,7 @@
     currentStats = createStats(context.hostname, fromCurrency, toCurrency);
 
     if (fromCurrency === toCurrency) {
+      EPC.scanAndRestore(document, selectors);
       currentContext.updateStats(currentStats);
       return;
     }

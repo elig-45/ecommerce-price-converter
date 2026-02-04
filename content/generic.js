@@ -133,6 +133,7 @@
   async function processElements(rootNode) {
     const elements = collectCandidateElements(rootNode);
     if (!elements.length) {
+      updateStats();
       return;
     }
 
@@ -240,6 +241,15 @@
     currentStats = createStats(context.hostname);
     if (siteCurrency?.currency && !currentStats.sourceCurrency) {
       currentStats.sourceCurrency = siteCurrency.currency;
+    }
+
+    if (
+      (sourceOverride && sourceOverride === targetCurrency) ||
+      (siteCurrency?.currency && siteCurrency.currency === targetCurrency)
+    ) {
+      restoreAll();
+      updateStats();
+      return;
     }
 
     enqueue(document);

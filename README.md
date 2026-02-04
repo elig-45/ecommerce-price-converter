@@ -69,7 +69,7 @@ If conversion is missing or incorrect:
 
 ## Local storage
 
-```
+``` text
 enabledGlobal: boolean
 siteOverrides: { [hostname]: boolean }
 preferredTargetCurrency: string
@@ -86,7 +86,7 @@ lastRunStats: { hostname, found, converted, skipped, reasonCounts }
 
 ## Project layout
 
-```
+``` text
 background/service_worker.js
 content/bridge.js
 content/generic.js
