@@ -51,7 +51,8 @@
     if (!text || typeof text !== "string") {
       return false;
     }
-    const trimmed = text.trim();
+    const normalized = text.replace(/[\u00A0\u202F]/g, " ");
+    const trimmed = normalized.trim();
     if (trimmed.length === 0 || trimmed.length > 40) {
       return false;
     }
