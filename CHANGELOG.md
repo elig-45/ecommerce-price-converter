@@ -13,3 +13,17 @@ All notable changes to this project will be documented in this file.
 - Exchange rate service with 6-hour cache and manual refresh.
 - Modern popup UI with optimistic toggles, skeleton loading, and toasts.
 - Debug logging for content scripts and service worker.
+
+## [0.2.0] - 2026-02-04
+
+### Added
+
+- Multi-language UI (EN/FR/DE/ES) with selectable language in options.
+- Options page opened on first install.
+- Amazon-specific popup message with controls hidden on Amazon domains.
+
+### Changed
+
+- Popup layout compacted and currency selectors displayed side-by-side.
+- Exchange rate card reduced in height.
+- Debug info retrieval moved to `EPC.getDebugInfo()` in the popup console.
