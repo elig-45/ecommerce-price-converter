@@ -29,7 +29,6 @@
   "source_hint_override": { "message": "Sobrescrito: {value}" },
   "source_hint_detected": { "message": "Detectado: {value}" },
   "source_hint_none": { "message": "Detectado: --" },
-  "subtitle_format": { "message": "{source} -> {target}" },
   "auto_label": { "message": "Auto" },
   "source_currency_unknown": { "message": "Moneda de origen desconocida" },
   "last_updated": { "message": "Última actualización: {ts}" },

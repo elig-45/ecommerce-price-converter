@@ -26,7 +26,6 @@ const DEFAULT_SETTINGS = {
   uiLanguage: "en"
 };
 
-const subtitle = document.getElementById("subtitle");
 const toggleGlobal = document.getElementById("toggleGlobal");
 const toggleSite = document.getElementById("toggleSite");
 const siteSubtext = document.getElementById("siteSubtext");
@@ -44,7 +43,6 @@ const reportBtn = document.getElementById("reportBtn");
 const toastContainer = document.getElementById("toastContainer");
 const amazonMessage = document.getElementById("amazonMessage");
 const mainContent = document.getElementById("mainContent");
-const subtitleEl = document.getElementById("subtitle");
 
 let enabledGlobal = true;
 let siteOverrides = {};
@@ -120,9 +118,6 @@ function updateAmazonMessage() {
   if (mainContent) {
     mainContent.hidden = isAmazon;
   }
-  if (subtitleEl) {
-    subtitleEl.hidden = isAmazon;
-  }
 }
 
 function getEffectiveEnabled() {
@@ -178,15 +173,6 @@ function updateSourceHint() {
     return;
   }
   sourceHint.textContent = t("source_hint_none", null, "Detected: --");
-}
-
-function updateSubtitle() {
-  const source = getSourceCurrency().source || "?";
-  subtitle.textContent = t(
-    "subtitle_format",
-    { source, target: preferredTargetCurrency },
-    `${source} -> ${preferredTargetCurrency}`
-  );
 }
 
 function populateSelects() {
@@ -331,7 +317,6 @@ async function loadStats() {
   statSkipped.textContent = lastStats?.skipped ?? "--";
 
   updateSourceHint();
-  updateSubtitle();
   await loadRate(false);
 }
 
@@ -511,7 +496,6 @@ toggleSite.addEventListener("change", async () => {
 targetSelect.addEventListener("change", async () => {
   const previousTarget = preferredTargetCurrency;
   preferredTargetCurrency = targetSelect.value;
-  updateSubtitle();
 
   await chrome.storage.local.set({ preferredTargetCurrency });
 
@@ -533,7 +517,6 @@ targetSelect.addEventListener("change", async () => {
 
     preferredTargetCurrency = previousTarget;
     targetSelect.value = previousTarget;
-    updateSubtitle();
     await chrome.storage.local.set({ preferredTargetCurrency: previousTarget });
     showToast(t("currency_change_failed", null, "Could not apply currency change."), "error");
   }

@@ -27,7 +27,6 @@
   "source_hint_override": { "message": "Override: {value}" },
   "source_hint_detected": { "message": "Detected: {value}" },
   "source_hint_none": { "message": "Detected: --" },
-  "subtitle_format": { "message": "{source} -> {target}" },
   "auto_label": { "message": "Auto" },
   "source_currency_unknown": { "message": "Source currency unknown" },
   "last_updated": { "message": "Last updated: {ts}" },

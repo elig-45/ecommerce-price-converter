@@ -2,6 +2,8 @@
 
 A global MV3 Chrome extension that converts ecommerce prices into your chosen currency. The goal is to stay general-purpose, but I also build site-specific adapters for certain stores (for example Alza.cz, and Amazon with multi-currency support).
 
+![Extension menu screenshot](assets/screenshot.png)
+
 ## Highlights
 
 - Multi-currency target selection (EUR, USD, GBP, CZK, PLN, HUF, CHF).
