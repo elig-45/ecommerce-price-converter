@@ -10,87 +10,14 @@
     <div class="app">
       <header class="header">
         <div class="title">ecommerce-price-converter</div>
-        <div class="subtitle" id="subtitle">CZK -> EUR</div>
       </header>
 
-      <section class="card">
-        <div class="row">
-          <div>
-            <div class="label">Global</div>
-            <div class="subtext">Convert prices on supported sites</div>
-          </div>
-          <label class="switch">
-            <input id="toggleGlobal" type="checkbox" />
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="row">
-          <div>
-            <div class="label">This site</div>
-            <div class="subtext" id="siteSubtext">Loading...</div>
-          </div>
-          <label class="switch">
-            <input id="toggleSite" type="checkbox" />
-            <span class="slider"></span>
-          </label>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="label">Target currency</div>
-        <select id="targetCurrency" class="select"></select>
-      </section>
-
-      <section class="card">
-        <div class="label">Source currency (this site)</div>
-        <select id="sourceCurrency" class="select"></select>
-        <div class="subtext" id="sourceHint">Detected: --</div>
-      </section>
-
-      <section class="card rate-card">
-        <div class="rate-main">
-          <div class="label">Exchange rate</div>
-          <div class="rate-value" id="rateValue">
-            <span class="rate-text" id="rateText">--</span>
-            <span class="skeleton skeleton-text"></span>
-          </div>
-        </div>
-        <div class="rate-meta">
-          <div class="last-updated" id="lastUpdated">Last updated: --</div>
-          <button id="refreshBtn" class="btn" type="button">
-            <span class="btn-label">Refresh rate</span>
-            <span class="btn-spinner" aria-hidden="true"></span>
-          </button>
-        </div>
-      </section>
-
-      <section class="card stats-card">
-        <div class="label">Conversion stats</div>
-        <div class="stats-grid">
-          <div class="stat">
-            <div class="stat-value" id="statFound">--</div>
-            <div class="stat-label">Found</div>
-          </div>
-          <div class="stat">
-            <div class="stat-value" id="statConverted">--</div>
-            <div class="stat-label">Converted</div>
-          </div>
-          <div class="stat">
-            <div class="stat-value" id="statSkipped">--</div>
-            <div class="stat-label">Skipped</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card actions-card">
-        <button id="reportBtn" class="btn ghost" type="button">Report this site</button>
-        <button id="copyBtn" class="btn ghost" type="button">Copy debug info</button>
+      <section class="card message-card">
+        <div class="label">Amazon</div>
+        <p class="message">
+          Pour Amazon, change la devise directement dans le menu Amazon dedié.
+        </p>
       </section>
     </div>
-
-    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
-
-    <script src="popup.js"></script>
   </body>
 </html>

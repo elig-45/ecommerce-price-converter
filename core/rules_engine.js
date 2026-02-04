@@ -11,7 +11,7 @@
       const isAmazon = /(^|\\.)amazon\\./i.test(hostname);
       const excluded = /amazonaws\\.com$|amazonpay\\.|amazonstatic\\.com$/i.test(hostname);
       if (isAmazon && !excluded) {
-        return { adapter: "amazon", forcedSourceCurrency: null };
+        return { adapter: "disabled", forcedSourceCurrency: null };
       }
     }
     return { adapter: "generic", forcedSourceCurrency: null };

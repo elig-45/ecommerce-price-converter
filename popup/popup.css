@@ -350,6 +350,17 @@ body[data-loading="true"] .card {
   opacity: 0.75;
 }
 
+.message-card {
+  gap: 8px;
+}
+
+.message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
 @keyframes shimmer {
   0% {
     background-position: 200% 0;

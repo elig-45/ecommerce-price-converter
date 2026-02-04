@@ -18,8 +18,8 @@
         "core/rules_engine.js",
         "core/storage.js",
         "content/observer.js",
+        "content/adapters/disabled.js",
         "content/adapters/alza.js",
-        "content/adapters/amazon.js",
         "content/generic.js",
         "content/bridge.js"
       ]
