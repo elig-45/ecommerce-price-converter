@@ -14,6 +14,7 @@
 
   const selectors = [
     "span.js-price-box__primary-price__value",
+    "span.price-box__primary-price__value",
     "span.coupon-block__price"
   ];
 
