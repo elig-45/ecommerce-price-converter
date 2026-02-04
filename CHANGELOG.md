@@ -3,7 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.1.0] - 2026-02-04
+
 ### Added
+
 - MV3 Chrome extension with CZK -> EUR conversion for ecommerce prices.
 - Robust price parser handling implicit formats (e.g., "2 450,-") and NBSP.
 - Dynamic page support using debounced MutationObserver and anti double-conversion.
