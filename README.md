@@ -1,39 +1,56 @@
 # ecommerce-price-converter
 
-Conversion instantanee des prix CZK -> EUR sur sites e-commerce, y compris les formats implicites (ex: 2 450,-). Concu pour les pages dynamiques et une UX moderne.
+A modern MV3 Chrome extension that converts CZK prices into EUR on supported ecommerce sites, including implicit formats like "2 450,-". Built for dynamic pages with an optimistic, fast popup UX.
 
-## Points forts
-- Conversion automatique des prix visibles, sans double-conversion.
-- Gestion des pages dynamiques via MutationObserver debounced.
-- Cache du taux 6h + rafraichissement manuel.
-- Popup moderne: toggles optimistes, skeletons, toasts.
+## Highlights
+- Automatic price conversion with double-conversion protection.
+- Dynamic pages supported via debounced MutationObserver.
+- 6-hour rate cache + manual refresh.
+- Modern popup UI: optimistic toggles, skeletons, toasts.
 
-## Formats de prix supportes
+## Supported sites (v1)
+- Alza.cz
+
+## Supported price formats
 - 2 450,-
 - 12450
 - 1 299
-- Espaces classiques, espaces insécables (NBSP)
+- Regular spaces and NBSP
 
-## Sites supportes (v1)
-- Alza.cz
+## Install from GitHub
 
-## Installation (unpacked)
-1. Ouvrir `chrome://extensions`.
-2. Activer le mode developpeur.
-3. Cliquer sur "Load unpacked" et selectionner ce dossier.
-4. Aller sur https://www.alza.cz puis ouvrir le popup.
+### Option A: Download ZIP
+1. Open the GitHub repository page.
+2. Click **Code** -> **Download ZIP**.
+3. Unzip it to a folder (make sure `manifest.json` is at the root).
 
-## Utilisation
-- Global: active/desactive la conversion partout.
-- This site: override local pour le site actif.
-- Refresh rate: force un refresh du taux.
+### Option B: Clone the repo
+```bash
+git clone <your-repo-url>
+cd ecommerce-price-converter
+```
 
-## Taux de change
+## Load the extension (unpacked)
+1. Open `chrome://extensions`.
+2. Enable **Developer mode** (top right).
+3. Click **Load unpacked** and select the repo folder (the one containing `manifest.json`).
+4. Visit https://www.alza.cz and open the popup to enable conversion.
+
+## Updating from GitHub
+- If you downloaded a ZIP: download the latest ZIP and replace your folder, then click **Reload** on `chrome://extensions`.
+- If you cloned: `git pull`, then click **Reload** on `chrome://extensions`.
+
+## Usage
+- **Global**: enable/disable conversion everywhere.
+- **This site**: override for the active site.
+- **Refresh rate**: force a rate update.
+
+## Exchange rates
 - Source: https://api.frankfurter.app
-- Cache local 6h dans `chrome.storage.local`.
-- Si le reseau echoue: fallback sur le cache si dispo, sinon etat d'erreur.
+- Cached for 6 hours in `chrome.storage.local`.
+- On network failure: fallback to cache if available, otherwise error state.
 
-## Stockage local
+## Local storage
 ```
 enabledGlobal: boolean
 siteOverrides: { [hostname]: boolean }
@@ -42,11 +59,11 @@ rateCache: { rate: number, ts: number }
 ```
 
 ## Permissions
-- `storage`: memoriser les preferences et le cache de taux.
-- `activeTab`: interagir avec l'onglet actif depuis le popup.
-- `<all_urls>`: v1, pour permettre l'activation sans modifier le manifest.
+- `storage`: preferences + rate cache.
+- `activeTab`: communicate with the active tab from the popup.
+- `<all_urls>`: v1 to allow activation without manifest updates.
 
-## Architecture (fichiers)
+## Project layout
 ```
 background/service_worker.js
 content/bridge.js
@@ -60,9 +77,9 @@ popup/popup.css
 manifest.json
 ```
 
-## Limitations v1
-- Uniquement Alza.cz.
-- Pas d'UI multi-devises (EUR par defaut).
+## v1 limitations
+- Alza.cz only.
+- No multi-currency UI (EUR default).
 
-## Licence
-Voir `LICENSE`.
+## License
+See `LICENSE`.
