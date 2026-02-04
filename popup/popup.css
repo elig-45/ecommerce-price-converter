@@ -219,8 +219,8 @@ body {
 }
 
 .rate-card {
-  gap: 6px;
-  padding: 10px;
+  gap: 4px;
+  padding: 8px;
 }
 
 .rate-main {
@@ -229,15 +229,19 @@ body {
   gap: 4px;
 }
 
+.rate-card .label {
+  font-size: 11px;
+}
+
 .rate-value {
   position: relative;
-  min-height: 22px;
+  min-height: 18px;
   display: flex;
   align-items: center;
 }
 
 .rate-text {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -257,12 +261,22 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .last-updated {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--muted);
+}
+
+.rate-card .btn {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.rate-card .skeleton {
+  height: 12px;
+  width: 110px;
 }
 
 .stats-grid {

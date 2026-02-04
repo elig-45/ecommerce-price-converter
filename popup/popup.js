@@ -279,7 +279,7 @@ function isIgnorableMessageError(message) {
 async function loadRate(force = false) {
   const { source } = getSourceCurrency();
   if (!source) {
-    rateText.textContent = t("source_currency_unknown", null, "Source currency unknown");
+    rateText.textContent = "--";
     lastUpdated.textContent = t("last_updated_unknown", null, "Last updated: --");
     refreshBtn.disabled = true;
     return;
