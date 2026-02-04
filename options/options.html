@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="options_title">Price Converter - Options</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="title" data-i18n="options_heading">Options</div>
+        <div class="subtitle" data-i18n="options_subtitle">Choose the language for the extension interface.</div>
+      </header>
+
+      <section class="card banner" id="firstRun" hidden>
+        <div class="banner-title" data-i18n="options_first_run_title">Welcome</div>
+        <div class="banner-text" data-i18n="options_first_run_body">Select your language for the extension.</div>
+      </section>
+
+      <section class="card">
+        <label class="label" for="languageSelect" data-i18n="options_language_label">Extension language</label>
+        <select id="languageSelect" class="select">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="es">Español</option>
+        </select>
+        <div class="hint" data-i18n="options_language_hint">Applies to the popup and options pages.</div>
+      </section>
+
+      <section class="actions">
+        <button class="btn" id="saveBtn" data-i18n="options_save">Save</button>
+        <span class="status" id="status" role="status"></span>
+      </section>
+    </div>
+
+    <script src="../core/i18n.js"></script>
+    <script defer src="options.js"></script>
+  </body>
+</html>

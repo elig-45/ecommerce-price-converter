@@ -8,7 +8,8 @@
     preferredTargetCurrency: "EUR",
     siteCurrencyOverrides: {},
     rateCache: {},
-    lastRunStats: null
+    lastRunStats: null,
+    uiLanguage: "en"
   };
 
   function isPlainObject(value) {
@@ -43,6 +44,8 @@
         typeof stored.preferredTargetCurrency === "string"
           ? stored.preferredTargetCurrency
           : DEFAULT_SETTINGS.preferredTargetCurrency,
+      uiLanguage:
+        typeof stored.uiLanguage === "string" ? stored.uiLanguage : DEFAULT_SETTINGS.uiLanguage,
       siteCurrencyOverrides: isPlainObject(stored.siteCurrencyOverrides) ? stored.siteCurrencyOverrides : {},
       rateCache: {},
       lastRunStats: isPlainObject(stored.lastRunStats) ? stored.lastRunStats : null

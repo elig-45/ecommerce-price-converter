@@ -1,0 +1,67 @@
+{
+  "extensionName": { "message": "Convertidor de precios de comercio electrónico" },
+  "extensionDescription": {
+    "message": "Convierte precios de comercio electrónico a tu moneda elegida en sitios compatibles."
+  },
+  "actionTitle": { "message": "Convertidor de precios" },
+  "popup_title": { "message": "Convertidor de precios" },
+  "popup_header_title": { "message": "Convertidor de precios de comercio electrónico" },
+  "popup_info_label": { "message": "Información" },
+  "popup_amazon_title": { "message": "Cambio de moneda" },
+  "popup_amazon_body": {
+    "message": "La conversión está desactivada para Amazon. Cambia el idioma y la moneda desde el menú de Amazon, como se muestra abajo."
+  },
+  "popup_amazon_image_alt": { "message": "Menú desplegable de Amazon para idioma y moneda" },
+  "unsupported_page": { "message": "Página no compatible" },
+  "source_hint_forced": { "message": "Forzado: {value}" },
+  "source_hint_override": { "message": "Sobrescrito: {value}" },
+  "source_hint_detected": { "message": "Detectado: {value}" },
+  "source_hint_none": { "message": "Detectado: --" },
+  "subtitle_format": { "message": "{source} -> {target}" },
+  "auto_label": { "message": "Auto" },
+  "source_currency_unknown": { "message": "Moneda de origen desconocida" },
+  "last_updated": { "message": "Última actualización: {ts}" },
+  "last_updated_stale": { "message": "Última actualización: {ts} (obsoleto)" },
+  "last_updated_unknown": { "message": "Última actualización: --" },
+  "rate_line": { "message": "1 {source} = {rate}" },
+  "rate_unavailable": { "message": "Tasa no disponible" },
+  "rate_unavailable_toast": { "message": "Tasa no disponible. Comprueba la conexión." },
+  "settings_saved_next_load": {
+    "message": "Configuración guardada. Se aplicará en la próxima carga de la página."
+  },
+  "apply_failed": { "message": "No se pudieron aplicar los cambios en esta página." },
+  "currency_change_failed": { "message": "No se pudo aplicar el cambio de moneda." },
+  "source_currency_failed": { "message": "No se pudo aplicar la moneda de origen." },
+  "rate_refreshed_next_load": { "message": "Tasa actualizada. Se aplicará en la próxima carga de la página." },
+  "rate_refreshed_page_failed": {
+    "message": "Tasa actualizada, pero falló la actualización de la página."
+  },
+  "no_active_site": { "message": "No hay un sitio activo para reportar." },
+  "debug_info_copied": { "message": "Información de depuración copiada." },
+  "copy_failed": { "message": "La copia falló." },
+  "issue_title": { "message": "Problema de conversión de precios en {site}" },
+  "issue_report_heading": { "message": "Informe" },
+  "unknown_site": { "message": "sitio desconocido" },
+  "debug_hostname": { "message": "Nombre de host: {value}" },
+  "debug_url": { "message": "URL: {value}" },
+  "debug_extension_version": { "message": "Versión de la extensión: {value}" },
+  "debug_target_currency": { "message": "Moneda objetivo: {value}" },
+  "debug_detected_source_currency": { "message": "Moneda de origen detectada: {value}" },
+  "debug_source_override": { "message": "Anulación de moneda de origen: {value}" },
+  "debug_forced_source_currency": { "message": "Moneda de origen forzada: {value}" },
+  "debug_stats": {
+    "message": "Estadísticas: encontradas={found}, convertidas={converted}, omitidas={skipped}"
+  },
+  "debug_reason_counts": { "message": "Conteo de motivos: {value}" },
+  "debug_timestamp": { "message": "Marca de tiempo: {value}" },
+  "options_title": { "message": "Convertidor de precios - Opciones" },
+  "options_heading": { "message": "Opciones" },
+  "options_subtitle": { "message": "Elige el idioma de la interfaz de la extensión." },
+  "options_language_label": { "message": "Idioma de la extensión" },
+  "options_language_hint": { "message": "Se aplica al popup y a las opciones." },
+  "options_save": { "message": "Guardar" },
+  "options_status_saved": { "message": "Guardado." },
+  "options_status_error": { "message": "No se pudo guardar. Inténtalo de nuevo." },
+  "options_first_run_title": { "message": "Bienvenido" },
+  "options_first_run_body": { "message": "Selecciona el idioma de la extensión." }
+}

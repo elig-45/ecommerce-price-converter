@@ -1,3 +1,19 @@
+const EPC = (window.EPC = window.EPC || {});
+const i18n = EPC.i18n || null;
+
+function t(key, vars, fallback) {
+  if (i18n?.t) {
+    return i18n.t(key, vars, fallback);
+  }
+  if (typeof fallback === "string") {
+    return fallback;
+  }
+  if (typeof key === "string") {
+    return key;
+  }
+  return "";
+}
+
 const CURRENCIES = ["EUR", "USD", "GBP", "CZK", "PLN", "HUF", "CHF"];
 const SOURCE_AUTO = "AUTO";
 
@@ -6,7 +22,8 @@ const DEFAULT_SETTINGS = {
   siteOverrides: {},
   preferredTargetCurrency: "EUR",
   siteCurrencyOverrides: {},
-  lastRunStats: null
+  lastRunStats: null,
+  uiLanguage: "en"
 };
 
 const subtitle = document.getElementById("subtitle");
@@ -75,7 +92,8 @@ function formatTimestamp(ts) {
   if (typeof ts !== "number") {
     return "--";
   }
-  return new Date(ts).toLocaleString();
+  const locale = i18n?.getLanguage ? i18n.getLanguage() : undefined;
+  return new Date(ts).toLocaleString(locale || undefined);
 }
 
 function isAlzaHost() {
@@ -106,7 +124,7 @@ function updateSiteToggleUI() {
 
 function updateSiteSubtext() {
   if (!hostname) {
-    siteSubtext.textContent = "Unsupported page";
+    siteSubtext.textContent = t("unsupported_page", null, "Unsupported page");
     return;
   }
   siteSubtext.textContent = hostname;
@@ -123,23 +141,27 @@ function getSourceCurrency() {
 function updateSourceHint() {
   const { forced, override, detected } = getSourceCurrency();
   if (forced) {
-    sourceHint.textContent = `Forced: ${forced}`;
+    sourceHint.textContent = t("source_hint_forced", { value: forced }, `Forced: ${forced}`);
     return;
   }
   if (override) {
-    sourceHint.textContent = `Override: ${override}`;
+    sourceHint.textContent = t("source_hint_override", { value: override }, `Override: ${override}`);
     return;
   }
   if (detected) {
-    sourceHint.textContent = `Detected: ${detected}`;
+    sourceHint.textContent = t("source_hint_detected", { value: detected }, `Detected: ${detected}`);
     return;
   }
-  sourceHint.textContent = "Detected: --";
+  sourceHint.textContent = t("source_hint_none", null, "Detected: --");
 }
 
 function updateSubtitle() {
   const source = getSourceCurrency().source || "?";
-  subtitle.textContent = `${source} -> ${preferredTargetCurrency}`;
+  subtitle.textContent = t(
+    "subtitle_format",
+    { source, target: preferredTargetCurrency },
+    `${source} -> ${preferredTargetCurrency}`
+  );
 }
 
 function populateSelects() {
@@ -155,7 +177,7 @@ function populateSelects() {
   sourceSelect.innerHTML = "";
   const autoOption = document.createElement("option");
   autoOption.value = SOURCE_AUTO;
-  autoOption.textContent = "Auto";
+  autoOption.textContent = t("auto_label", null, "Auto");
   sourceSelect.appendChild(autoOption);
   for (const currency of CURRENCIES) {
     const option = document.createElement("option");
@@ -232,8 +254,8 @@ function isIgnorableMessageError(message) {
 async function loadRate(force = false) {
   const { source } = getSourceCurrency();
   if (!source) {
-    rateText.textContent = "Source currency unknown";
-    lastUpdated.textContent = "Last updated: --";
+    rateText.textContent = t("source_currency_unknown", null, "Source currency unknown");
+    lastUpdated.textContent = t("last_updated_unknown", null, "Last updated: --");
     refreshBtn.disabled = true;
     return;
   }
@@ -250,14 +272,19 @@ async function loadRate(force = false) {
       style: "currency",
       currency: preferredTargetCurrency
     });
-    rateText.textContent = `1 ${source} = ${formatter.format(response.rate)}`;
+    rateText.textContent = t(
+      "rate_line",
+      { source, rate: formatter.format(response.rate) },
+      `1 ${source} = ${formatter.format(response.rate)}`
+    );
     const ts = formatTimestamp(response.ts);
-    const staleSuffix = response.stale ? " (stale)" : "";
-    lastUpdated.textContent = `Last updated: ${ts}${staleSuffix}`;
+    const staleKey = response.stale ? "last_updated_stale" : "last_updated";
+    const fallback = `Last updated: ${ts}${response.stale ? " (stale)" : ""}`;
+    lastUpdated.textContent = t(staleKey, { ts }, fallback);
   } else {
-    rateText.textContent = "Rate unavailable";
-    lastUpdated.textContent = "Last updated: --";
-    showToast("Rate unavailable. Check connection.", "error");
+    rateText.textContent = t("rate_unavailable", null, "Rate unavailable");
+    lastUpdated.textContent = t("last_updated_unknown", null, "Last updated: --");
+    showToast(t("rate_unavailable_toast", null, "Rate unavailable. Check connection."), "error");
   }
 
   setRateLoading(false);
@@ -290,30 +317,59 @@ function buildDebugInfo() {
   const timestamp = new Date().toISOString();
 
   const lines = [
-    `Hostname: ${hostname || "--"}`,
-    `URL: ${activeTabUrl || "--"}`,
-    `Extension version: ${version}`,
-    `Target currency: ${preferredTargetCurrency}`,
-    `Detected source currency: ${sourceInfo.detected || "--"}`,
-    `Source override: ${sourceInfo.override || "--"}`,
-    `Forced source currency: ${sourceInfo.forced || "--"}`,
-    `Stats: found=${stats.found ?? "--"}, converted=${stats.converted ?? "--"}, skipped=${stats.skipped ?? "--"}`,
-    `Reason counts: ${JSON.stringify(stats.reasonCounts || {})}`,
-    `Timestamp: ${timestamp}`
+    t("debug_hostname", { value: hostname || "--" }, `Hostname: ${hostname || "--"}`),
+    t("debug_url", { value: activeTabUrl || "--" }, `URL: ${activeTabUrl || "--"}`),
+    t("debug_extension_version", { value: version }, `Extension version: ${version}`),
+    t("debug_target_currency", { value: preferredTargetCurrency }, `Target currency: ${preferredTargetCurrency}`),
+    t(
+      "debug_detected_source_currency",
+      { value: sourceInfo.detected || "--" },
+      `Detected source currency: ${sourceInfo.detected || "--"}`
+    ),
+    t("debug_source_override", { value: sourceInfo.override || "--" }, `Source override: ${sourceInfo.override || "--"}`),
+    t(
+      "debug_forced_source_currency",
+      { value: sourceInfo.forced || "--" },
+      `Forced source currency: ${sourceInfo.forced || "--"}`
+    ),
+    t(
+      "debug_stats",
+      {
+        found: stats.found ?? "--",
+        converted: stats.converted ?? "--",
+        skipped: stats.skipped ?? "--"
+      },
+      `Stats: found=${stats.found ?? "--"}, converted=${stats.converted ?? "--"}, skipped=${stats.skipped ?? "--"}`
+    ),
+    t(
+      "debug_reason_counts",
+      { value: JSON.stringify(stats.reasonCounts || {}) },
+      `Reason counts: ${JSON.stringify(stats.reasonCounts || {})}`
+    ),
+    t("debug_timestamp", { value: timestamp }, `Timestamp: ${timestamp}`)
   ];
 
   return lines.join("\n");
 }
 
 function buildIssueUrl() {
-  const title = `Price conversion issue on ${hostname || "unknown site"}`;
-  const body = `## Report\n\n${buildDebugInfo()}`;
+  const siteLabel = hostname || t("unknown_site", null, "unknown site");
+  const title = t("issue_title", { site: siteLabel }, `Price conversion issue on ${siteLabel}`);
+  const body = `## ${t("issue_report_heading", null, "Report")}\n\n${buildDebugInfo()}`;
   const base = "https://github.com/elig-45/ecommerce-price-converter/issues/new";
   return `${base}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
 }
 
 async function init() {
   setAppLoading(true);
+
+  if (i18n?.init) {
+    await i18n.init();
+    if (i18n.applyTranslations) {
+      i18n.applyTranslations(document);
+    }
+    document.documentElement.lang = i18n.getLanguage();
+  }
 
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   const activeTab = tabs && tabs.length > 0 ? tabs[0] : null;
@@ -365,7 +421,10 @@ toggleGlobal.addEventListener("change", async () => {
   } catch (err) {
     const msg = err?.message || "";
     if (isIgnorableMessageError(msg)) {
-      showToast("Settings saved. Will apply on the next page load.", "error");
+      showToast(
+        t("settings_saved_next_load", null, "Settings saved. Will apply on the next page load."),
+        "error"
+      );
       return;
     }
 
@@ -379,7 +438,7 @@ toggleGlobal.addEventListener("change", async () => {
       siteOverrides: previousOverrides
     });
 
-    showToast("Could not apply changes on this page.", "error");
+    showToast(t("apply_failed", null, "Could not apply changes on this page."), "error");
   }
 });
 
@@ -404,14 +463,17 @@ toggleSite.addEventListener("change", async () => {
   } catch (err) {
     const msg = err?.message || "";
     if (isIgnorableMessageError(msg)) {
-      showToast("Settings saved. Will apply on the next page load.", "error");
+      showToast(
+        t("settings_saved_next_load", null, "Settings saved. Will apply on the next page load."),
+        "error"
+      );
       return;
     }
 
     siteOverrides = previousOverrides;
     toggleSite.checked = previousEffective;
     await chrome.storage.local.set({ siteOverrides: previousOverrides });
-    showToast("Could not apply changes on this page.", "error");
+    showToast(t("apply_failed", null, "Could not apply changes on this page."), "error");
   }
 });
 
@@ -431,7 +493,10 @@ targetSelect.addEventListener("change", async () => {
   } catch (err) {
     const msg = err?.message || "";
     if (isIgnorableMessageError(msg)) {
-      showToast("Settings saved. Will apply on the next page load.", "error");
+      showToast(
+        t("settings_saved_next_load", null, "Settings saved. Will apply on the next page load."),
+        "error"
+      );
       return;
     }
 
@@ -439,7 +504,7 @@ targetSelect.addEventListener("change", async () => {
     targetSelect.value = previousTarget;
     updateSubtitle();
     await chrome.storage.local.set({ preferredTargetCurrency: previousTarget });
-    showToast("Could not apply currency change.", "error");
+    showToast(t("currency_change_failed", null, "Could not apply currency change."), "error");
   }
 });
 
@@ -466,14 +531,17 @@ sourceSelect.addEventListener("change", async () => {
   } catch (err) {
     const msg = err?.message || "";
     if (isIgnorableMessageError(msg)) {
-      showToast("Settings saved. Will apply on the next page load.", "error");
+      showToast(
+        t("settings_saved_next_load", null, "Settings saved. Will apply on the next page load."),
+        "error"
+      );
       return;
     }
 
     siteCurrencyOverrides = previousOverrides;
     sourceSelect.value = previousValue;
     await chrome.storage.local.set({ siteCurrencyOverrides: previousOverrides });
-    showToast("Could not apply source currency.", "error");
+    showToast(t("source_currency_failed", null, "Could not apply source currency."), "error");
   }
 });
 
@@ -490,17 +558,23 @@ refreshBtn.addEventListener("click", async () => {
     } catch (err) {
       const msg = err?.message || "";
       if (isIgnorableMessageError(msg)) {
-        showToast("Rate refreshed. Will apply on the next page load.", "error");
+        showToast(
+          t("rate_refreshed_next_load", null, "Rate refreshed. Will apply on the next page load."),
+          "error"
+        );
         return;
       }
-      showToast("Rate refreshed, but page update failed.", "error");
+      showToast(
+        t("rate_refreshed_page_failed", null, "Rate refreshed, but page update failed."),
+        "error"
+      );
     }
   }
 });
 
 reportBtn.addEventListener("click", () => {
   if (!hostname) {
-    showToast("No active site to report.", "error");
+    showToast(t("no_active_site", null, "No active site to report."), "error");
     return;
   }
   chrome.tabs.create({ url: buildIssueUrl() });
@@ -509,9 +583,9 @@ reportBtn.addEventListener("click", () => {
 copyBtn.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(buildDebugInfo());
-    showToast("Debug info copied.", "success");
+    showToast(t("debug_info_copied", null, "Debug info copied."), "success");
   } catch (err) {
-    showToast("Copy failed.", "error");
+    showToast(t("copy_failed", null, "Copy failed."), "error");
   }
 });
 

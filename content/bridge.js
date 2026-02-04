@@ -7,7 +7,8 @@ const DEFAULT_SETTINGS = EPC.storage?.DEFAULT_SETTINGS || {
   preferredTargetCurrency: "EUR",
   siteCurrencyOverrides: {},
   rateCache: {},
-  lastRunStats: null
+  lastRunStats: null,
+  uiLanguage: "en"
 };
 
 let activeAdapter = null;

@@ -2,9 +2,14 @@ importScripts("../core/storage.js", "../core/currency_service.js");
 
 const EPC = self.EPC || {};
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   if (EPC.storage?.ensureDefaults) {
     EPC.storage.ensureDefaults();
+  }
+
+  if (details?.reason === "install") {
+    const url = chrome.runtime.getURL("options/options.html?source=install");
+    chrome.tabs.create({ url });
   }
 });
 

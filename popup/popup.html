@@ -3,34 +3,36 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Price Converter</title>
+    <title data-i18n="popup_title">Price Converter</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body data-loading="true">
     <div class="app">
       <header class="header">
-        <div class="title">E-commerce price converter</div>
+        <div class="title" data-i18n="popup_header_title">E-commerce price converter</div>
       </header>
 
       <section class="card message-card">
         <div class="message-header">
           <div class="label">Amazon</div>
-          <span class="pill">Information</span>
+          <span class="pill" data-i18n="popup_info_label">Information</span>
         </div>
-        <h1 class="message-title">Changement de devise</h1>
-        <p class="message">
-          La conversion est désactivée pour Amazon.
-          Veuillez modifier la langue et la devise depuis le menu
-          dédié d'Amazon, comme indiqué ci-dessous.
+        <h1 class="message-title" data-i18n="popup_amazon_title">Currency change</h1>
+        <p class="message" data-i18n="popup_amazon_body">
+          Conversion is disabled for Amazon. Please change the language and currency from Amazon's dedicated menu, as
+          shown below.
         </p>
         <div class="message-media">
           <img
             class="message-image"
             src="../assets/lang-menu.png"
-            alt="Menu déroulant Amazon pour la langue et la devise"
+            alt="Amazon language and currency dropdown menu"
+            data-i18n-alt="popup_amazon_image_alt"
           />
         </div>
       </section>
     </div>
+    <script src="../core/i18n.js"></script>
+    <script defer src="popup_i18n.js"></script>
   </body>
 </html>
