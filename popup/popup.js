@@ -43,6 +43,9 @@ const statSkipped = document.getElementById("statSkipped");
 const reportBtn = document.getElementById("reportBtn");
 const copyBtn = document.getElementById("copyBtn");
 const toastContainer = document.getElementById("toastContainer");
+const amazonMessage = document.getElementById("amazonMessage");
+const mainContent = document.getElementById("mainContent");
+const subtitleEl = document.getElementById("subtitle");
 
 let enabledGlobal = true;
 let siteOverrides = {};
@@ -98,6 +101,29 @@ function formatTimestamp(ts) {
 
 function isAlzaHost() {
   return hostname.endsWith("alza.cz");
+}
+
+function isAmazonHost() {
+  if (!hostname) {
+    return false;
+  }
+  const isAmazon = /(^|\.)amazon\./i.test(hostname);
+  const excluded = /amazonaws\.com$|amazonpay\.|amazonstatic\.com$/i.test(hostname);
+  return isAmazon && !excluded;
+}
+
+function updateAmazonMessage() {
+  if (!amazonMessage) {
+    return;
+  }
+  const isAmazon = isAmazonHost();
+  amazonMessage.hidden = !isAmazon;
+  if (mainContent) {
+    mainContent.hidden = isAmazon;
+  }
+  if (subtitleEl) {
+    subtitleEl.hidden = isAmazon;
+  }
 }
 
 function getEffectiveEnabled() {
@@ -386,6 +412,7 @@ async function init() {
   }
 
   updateSiteSubtext();
+  updateAmazonMessage();
 
   const stored = await chrome.storage.local.get(DEFAULT_SETTINGS);
   enabledGlobal = stored.enabledGlobal ?? true;

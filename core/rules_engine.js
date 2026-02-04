@@ -8,8 +8,8 @@
       return { adapter: "alza", forcedSourceCurrency: "CZK" };
     }
     if (hostname) {
-      const isAmazon = /(^|\\.)amazon\\./i.test(hostname);
-      const excluded = /amazonaws\\.com$|amazonpay\\.|amazonstatic\\.com$/i.test(hostname);
+      const isAmazon = /(^|\.)amazon\./i.test(hostname);
+      const excluded = /amazonaws\.com$|amazonpay\.|amazonstatic\.com$/i.test(hostname);
       if (isAmazon && !excluded) {
         return { adapter: "disabled", forcedSourceCurrency: null };
       }

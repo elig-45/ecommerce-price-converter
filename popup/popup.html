@@ -10,9 +10,83 @@
     <div class="app">
       <header class="header">
         <div class="title" data-i18n="popup_header_title">E-commerce price converter</div>
+        <div class="subtitle" id="subtitle">--</div>
       </header>
 
-      <section class="card message-card">
+      <div id="mainContent">
+        <section class="card">
+          <div class="row">
+            <div>
+              <div class="label" data-i18n="popup_global_label">Global conversion</div>
+              <div class="subtext" data-i18n="popup_global_subtext">Enable or disable conversion everywhere.</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleGlobal" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="row">
+            <div>
+              <div class="label" data-i18n="popup_site_label">This site</div>
+              <div class="subtext" id="siteSubtext">--</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleSite" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="label" data-i18n="popup_target_label">Target currency</div>
+          <select id="targetCurrency" class="select"></select>
+          <div class="label" data-i18n="popup_source_label">Source currency (this site)</div>
+          <select id="sourceCurrency" class="select"></select>
+          <div class="subtext" id="sourceHint">--</div>
+        </section>
+
+        <section class="card rate-card">
+          <div class="rate-main">
+            <div class="label" data-i18n="popup_rate_label">Exchange rate</div>
+            <div class="rate-value" id="rateValue">
+              <div class="rate-text" id="rateText">--</div>
+              <div class="skeleton"></div>
+            </div>
+          </div>
+          <div class="rate-meta">
+            <div class="last-updated" id="lastUpdated">--</div>
+            <button class="btn ghost" id="refreshBtn">
+              <span class="btn-spinner"></span>
+              <span class="btn-label" data-i18n="popup_refresh">Refresh</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="label" data-i18n="popup_stats_label">Last run</div>
+          <div class="stats-grid">
+            <div class="stat">
+              <div class="stat-value" id="statFound">--</div>
+              <div class="stat-label" data-i18n="popup_stat_found">Found</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value" id="statConverted">--</div>
+              <div class="stat-label" data-i18n="popup_stat_converted">Converted</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value" id="statSkipped">--</div>
+              <div class="stat-label" data-i18n="popup_stat_skipped">Skipped</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card actions-card">
+          <button class="btn" id="reportBtn" data-i18n="popup_report">Report this site</button>
+          <button class="btn ghost" id="copyBtn" data-i18n="popup_copy_debug">Copy debug info</button>
+        </section>
+      </div>
+
+      <section class="card message-card" id="amazonMessage" hidden>
         <div class="message-header">
           <div class="label">Amazon</div>
           <span class="pill" data-i18n="popup_info_label">Information</span>
@@ -32,7 +106,8 @@
         </div>
       </section>
     </div>
+    <div class="toast-container" id="toastContainer"></div>
     <script src="../core/i18n.js"></script>
-    <script defer src="popup_i18n.js"></script>
+    <script defer src="popup.js"></script>
   </body>
 </html>
