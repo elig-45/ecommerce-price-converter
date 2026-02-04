@@ -16,7 +16,7 @@
   "popup_global_subtext": { "message": "Activer ou désactiver la conversion partout." },
   "popup_site_label": { "message": "Ce site" },
   "popup_target_label": { "message": "Devise cible" },
-  "popup_source_label": { "message": "Devise source (ce site)" },
+  "popup_source_label": { "message": "Devise source" },
   "popup_rate_label": { "message": "Taux de change" },
   "popup_refresh": { "message": "Actualiser" },
   "popup_stats_label": { "message": "Dernier passage" },

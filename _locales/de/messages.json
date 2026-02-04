@@ -16,7 +16,7 @@
   "popup_global_subtext": { "message": "Umrechnung überall aktivieren oder deaktivieren." },
   "popup_site_label": { "message": "Diese Seite" },
   "popup_target_label": { "message": "Zielwährung" },
-  "popup_source_label": { "message": "Quellwährung (diese Seite)" },
+  "popup_source_label": { "message": "Quellwährung" },
   "popup_rate_label": { "message": "Wechselkurs" },
   "popup_refresh": { "message": "Aktualisieren" },
   "popup_stats_label": { "message": "Letzter Lauf" },

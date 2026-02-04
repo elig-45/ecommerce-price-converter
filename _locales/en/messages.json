@@ -14,7 +14,7 @@
   "popup_global_subtext": { "message": "Enable or disable conversion everywhere." },
   "popup_site_label": { "message": "This site" },
   "popup_target_label": { "message": "Target currency" },
-  "popup_source_label": { "message": "Source currency (this site)" },
+  "popup_source_label": { "message": "Source currency" },
   "popup_rate_label": { "message": "Exchange rate" },
   "popup_refresh": { "message": "Refresh" },
   "popup_stats_label": { "message": "Last run" },

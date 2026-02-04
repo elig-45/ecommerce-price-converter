@@ -16,7 +16,7 @@
   "popup_global_subtext": { "message": "Activa o desactiva la conversión en todas partes." },
   "popup_site_label": { "message": "Este sitio" },
   "popup_target_label": { "message": "Moneda objetivo" },
-  "popup_source_label": { "message": "Moneda de origen (este sitio)" },
+  "popup_source_label": { "message": "Moneda de origen" },
   "popup_rate_label": { "message": "Tipo de cambio" },
   "popup_refresh": { "message": "Actualizar" },
   "popup_stats_label": { "message": "Última ejecución" },
