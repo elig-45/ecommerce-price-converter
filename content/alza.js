@@ -3,6 +3,15 @@
   const EPC = (root.EPC = root.EPC || {});
   EPC.siteAdapters = EPC.siteAdapters || {};
 
+  function log(message, data) {
+    const ts = new Date().toISOString();
+    if (data !== undefined) {
+      console.log(`[epc ${ts}] ${message}`, data);
+    } else {
+      console.log(`[epc ${ts}] ${message}`);
+    }
+  }
+
   const selectors = [
     "span.js-price-box__primary-price__value",
     "span.coupon-block__price"
@@ -53,6 +62,7 @@
 
   function start({ rate, formatter }) {
     if (typeof rate !== "number" || !Number.isFinite(rate) || !formatter) {
+      log("❌ start() invalid params", { rate, formatter: Boolean(formatter) });
       return;
     }
 
@@ -60,6 +70,7 @@
     currentFormatter = formatter;
     active = true;
 
+    log("🧩 Alza adapter start", { rate, selectors });
     EPC.scanAndConvert(document, selectors, currentRate, currentFormatter);
 
     if (!observer) {
@@ -84,6 +95,9 @@
       const target = document.body || document.documentElement;
       if (target) {
         observer.observe(target, { childList: true, subtree: true, characterData: true });
+        log("👀 MutationObserver attached", { target: target.nodeName });
+      } else {
+        log("⚠️ No document body/root to observe");
       }
     }
   }
@@ -100,6 +114,7 @@
     }
     pendingNodes.clear();
     EPC.scanAndRestore(document, selectors);
+    log("🛑 Alza adapter stopped");
   }
 
   EPC.siteAdapters.alza = {
@@ -107,4 +122,6 @@
     start,
     stop
   };
+
+  log("✅ Alza adapter registered", { selectors });
 })();

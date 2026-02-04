@@ -10,11 +10,25 @@ const DEFAULT_SETTINGS = {
   preferredTargetCurrency: DEFAULT_TO
 };
 
+function log(message, data) {
+  const ts = new Date().toISOString();
+  if (data !== undefined) {
+    console.log(`[epc ${ts}] ${message}`, data);
+  } else {
+    console.log(`[epc ${ts}] ${message}`);
+  }
+}
+
 function getSiteAdapter() {
   if (!isSupportedSite) {
+    log("⚠️ Unsupported site", { hostname });
     return null;
   }
-  return window.EPC?.siteAdapters?.alza || null;
+  const adapter = window.EPC?.siteAdapters?.alza || null;
+  if (!adapter) {
+    log("⚠️ Adapter not ready", { hostname, hasEpc: Boolean(window.EPC) });
+  }
+  return adapter;
 }
 
 function getEffectiveEnabled(settings) {
@@ -33,11 +47,14 @@ function createFormatter(currency) {
 }
 
 function sendRuntimeMessage(message) {
+  log("📨 Sending runtime message", message);
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(message, (response) => {
       if (chrome.runtime.lastError) {
+        log("❌ Runtime message error", chrome.runtime.lastError.message);
         resolve({ ok: false, error: chrome.runtime.lastError.message });
       } else {
+        log("✅ Runtime message response", response);
         resolve(response);
       }
     });
@@ -45,6 +62,7 @@ function sendRuntimeMessage(message) {
 }
 
 async function requestRate(targetCurrency) {
+  log("💱 Requesting rate", { from: DEFAULT_FROM, to: targetCurrency });
   const response = await sendRuntimeMessage({
     type: "RATE_GET",
     from: DEFAULT_FROM,
@@ -59,31 +77,39 @@ async function requestRate(targetCurrency) {
 }
 
 async function applyConversion() {
+  log("🚀 Apply conversion requested");
   const siteAdapter = getSiteAdapter();
   if (!siteAdapter) {
+    log("❌ Apply failed: unsupported_site");
     throw new Error("unsupported_site");
   }
 
   const settings = await chrome.storage.local.get(DEFAULT_SETTINGS);
+  log("📦 Loaded settings", settings);
   const targetCurrency = settings.preferredTargetCurrency || DEFAULT_TO;
   const formatter = createFormatter(targetCurrency);
   const rateResponse = await requestRate(targetCurrency);
 
   siteAdapter.start({ rate: rateResponse.rate, formatter });
+  log("✅ Conversion started", { rate: rateResponse.rate, currency: targetCurrency });
 
   return { ok: true };
 }
 
 function restoreConversion() {
+  log("↩️ Restore conversion requested");
   const siteAdapter = getSiteAdapter();
   if (!siteAdapter) {
+    log("❌ Restore failed: unsupported_site");
     throw new Error("unsupported_site");
   }
   siteAdapter.stop();
+  log("✅ Conversion stopped");
   return { ok: true };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  log("📥 Content message received", message);
   if (!message || typeof message.type !== "string") {
     return;
   }
@@ -106,17 +132,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function initAutoApply() {
+  log("🟡 initAutoApply()");
   const siteAdapter = getSiteAdapter();
   if (!siteAdapter) {
     return;
   }
   const settings = await chrome.storage.local.get(DEFAULT_SETTINGS);
+  log("📦 Loaded settings (auto)", settings);
   if (getEffectiveEnabled(settings)) {
     try {
       await applyConversion();
     } catch (err) {
+      log("❌ Auto-apply failed", err?.message || err);
       // Rate unavailable or other error; stay disabled.
     }
+  } else {
+    log("⏸️ Auto-apply skipped (disabled)");
   }
 }
 

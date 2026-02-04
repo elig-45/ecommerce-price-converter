@@ -32,12 +32,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const force = message.type === "RATE_REFRESH";
     const from = typeof message.from === "string" ? message.from : DEFAULT_FROM;
     const to = typeof message.to === "string" ? message.to : DEFAULT_TO;
+    const ts = new Date().toISOString();
+    console.log(`[epc ${ts}] 📡 Rate request`, { type: message.type, from, to, sender });
 
     getRate({ force, from, to })
       .then((data) => {
+        console.log(`[epc ${new Date().toISOString()}] ✅ Rate response`, data);
         sendResponse({ ok: true, ...data });
       })
       .catch((err) => {
+        console.log(`[epc ${new Date().toISOString()}] ❌ Rate error`, err?.message || err);
         sendResponse({ ok: false, error: err?.message || "rate_unavailable" });
       });
 
